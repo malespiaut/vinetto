@@ -1,0 +1,40 @@
+                                  Vinetto
+
+                       http://vinetto.sourceforge.net
+
+                     Michel Roukine <rukin@users.sf.net>
+
+
+Project overview [21 mar 2006]
+================
+1 - Context : The Windows systems (98, ME, 2000 and XP) can store thumbnails and metadata of the picture files contained in the directories of its FAT32 or NTFS filesystems. 
+Thumbnails and associated metadata are stored in Thumbs.db files. 
+Thumbs.db files are undocumented OLE structured files.
+
+Once a picture file has been deleted from the filesystem, the related thumbnail and associated metada remain stored in the Thumbs.db file. So, the data contained in those thumbs.db files are an helpful source of information for the forensics investigator.
+
+2 - What the software will do : Vinetto will extract thumbnails and associated metadata from the Thumbs.db files.
+development phase 1 : Thumbnails will be written as JPEG picture files. Associated metadata will be written in flat text file.
+development phase 2 : Vinetto will have a GUI that will display thumbnails.
+
+3 - What purpose it will serve : Vinetto will help *nix-based forensics investigators to : 
+  -> easily preview thumbnails of deleted pictures on Windows systems, 
+  -> obtain informations (dates, path, ...) about those deleted images. 
+
+4 - Misc. : Vinetto is intended to be integrated into forensics liveCD like FCCU GNU/Linux Forensic Boot CD.
+
+
+Usage
+=====
+
+Usage: vinetto file [-d dir ]
+
+	file : a Thumbs.db file
+
+	-d dir : specify the location where extracted thumbnails and metadata list should be written.
+
+	If there is no directory specified, metadata list will be written on standard output.
+
+--------------
+25 mar 2006
+Michel Roukine
