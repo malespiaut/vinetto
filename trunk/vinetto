@@ -26,12 +26,34 @@
 import sys
 import StringIO
 import Image
+import getopt
 
 from os.path import basename
 from os      import mkdir
 from struct  import pack
 from struct  import unpack
 from time    import ctime
+
+def getargs():
+
+    try:
+        opts,pargs = getopt.getopt (sys.argv[1:], 'd:')
+    
+        if len(pargs) != 1:
+            raise RuntimeError, "One file required."
+        else : tDBfname = pargs[0]
+    
+        if len(opts) > 1:
+            raise RuntimeError, "Too much options."
+        elif len(opts) == 0 : dirTo = ""
+        else : dirTo = opts[0][1]
+        
+        return (tDBfname, dirTo)   
+        
+    except Exception,e :
+	    print e
+	    print "Usage: vinetto [ -d dir ] file"
+	    sys.exit(1)
 
 
 def conv2pytime (win32filetime):
@@ -52,22 +74,18 @@ def nextBlock (TDB, Table, i):
 
 PPS_TYPES = ["undefined", "storage", "stream", "undefined", "undefined", "root"]
 
-if (len(sys.argv) != 2) :
-    print  " ***", basename(sys.argv[0]), " : missing argument."
-    sys.exit(1)
-
 header       = open("/usr/local/etc/vinetto/header","rb").read()
 quantization = open("/usr/local/etc/vinetto/quantization","rb").read()
 huffman      = open("/usr/local/etc/vinetto/huffman","rb").read()
 
-outputdir    = "./vinetto_output/"
+tDBfname,outputdir = getargs()
 try :
     mkdir(outputdir)
 except:
     print "Error opening", outputdir
     sys.exit(10)
 
-thumbsDB = open(sys.argv[1],"rb").read()
+thumbsDB = open(tDBfname,"rb").read()
 longueur = len(thumbsDB)
 
 if (longueur % 512 ) != 0 : print " *** Warning : length " + sys.argv[1] + " : " + str(longueur) + ", non multiple 512"
