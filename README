@@ -36,7 +36,7 @@ FCCU GNU/Linux Forensic Boot CD.
 Usage
 =====
 
-Usage: vinetto file [-d dir ]
+Usage: vinetto [-d dir ] file
 
 	file : a Thumbs.db file
 
@@ -47,5 +47,5 @@ list should be written.
 standard output.
 
 --------------
-25 mar 2006
+26 mar 2006
 Michel Roukine
