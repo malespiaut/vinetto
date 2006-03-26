@@ -34,6 +34,7 @@ from struct  import pack
 from struct  import unpack
 from time    import ctime
 
+
 def getargs():
 
     try:
@@ -80,9 +81,10 @@ huffman      = open("/usr/local/etc/vinetto/huffman","rb").read()
 
 tDBfname,outputdir = getargs()
 try :
+    outputdir+="/"
     mkdir(outputdir)
 except:
-    print "Error opening", outputdir
+    print "Error creating", outputdir
     sys.exit(10)
 
 thumbsDB = open(tDBfname,"rb").read()
