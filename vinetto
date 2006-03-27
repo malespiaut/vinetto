@@ -247,13 +247,14 @@ while currentBlock != -2 :
                         sys.exit(5)
                     # Type 1 TN processing ...
                     
-                    type1sr = header[:0x14]
-                    type1sr = type1sr + quantization
-                    type1sr = type1sr + sr[0x1e:0x34]
-                    type1sr = type1sr + huffman
-                    type1sr = type1sr + sr[0x34:]
-                    
                     if PIL == "imported" :
+                                        
+                        type1sr = header[:0x14]
+                        type1sr = type1sr + quantization
+                        type1sr = type1sr + sr[0x1e:0x34]
+                        type1sr = type1sr + huffman
+                        type1sr = type1sr + sr[0x34:]
+
                         im = Image.open(StringIO.StringIO(type1sr))
                         r,g,b,a=im.split()
                         im = Image.merge("RGB", (b,g,r))
