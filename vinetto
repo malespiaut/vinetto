@@ -245,7 +245,8 @@ while currentBlock != -2 :
                 # --------------------------- header 2 ---------------------------------------- 
                 # is it a type 2 thumbnail ? (full jpeg)
                 if  sr[0x0c:0x10] == "\xff\xd8\xff\xe0" :
-                    open(outputdir + SIDstr + ".jpg","wb").write(sr[0x0c:])
+                    if outputdir != "" :
+                        open(outputdir + SIDstr + ".jpg","wb").write(sr[0x0c:])
                 elif  unpack("L",sr[0x0c:0x10])[0] == 1 :
                     # is second header OK ?
                     if  unpack("H", sr[0x0c+4:0x0c+6])[0] != (longueur - 0x0c - 0x10) :
@@ -265,7 +266,8 @@ while currentBlock != -2 :
                         r,g,b,a=im.split()
                         im = Image.merge("RGB", (b,g,r))
                         im = im.transpose(Image.FLIP_TOP_BOTTOM)
-                        im.save(outputdir + SIDstr + ".jpg")
+                        if outputdir != "" :
+                            im.save(outputdir + SIDstr + ".jpg")
                     
                 else :
                     print >>sys.stderr, " *** Err : header (2) error in stream", SID
