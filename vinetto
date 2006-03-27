@@ -33,6 +33,8 @@ from struct  import pack
 from struct  import unpack
 from time    import ctime
 
+PPS_TYPES = ["undefined", "storage", "stream", "undefined", "undefined", "root"]
+
 
 def getargs():
 
@@ -71,6 +73,7 @@ def nextBlock (TDB, Table, i):
     offset = Table [iFAT] * 512 + 0x200 + iSECT*4
     return unpack("l", TDB[offset:offset+4])[0]
 
+
 if sys.byteorder != "little" :
     print
     print "Sorry, vinetto needs a little endian byte ordered platform."
@@ -79,18 +82,15 @@ if sys.byteorder != "little" :
 try:
     import Image
     PIL = "imported"
+    header       = open("/usr/local/etc/vinetto/header","rb").read()
+    quantization = open("/usr/local/etc/vinetto/quantization","rb").read()
+    huffman      = open("/usr/local/etc/vinetto/huffman","rb").read()
 except:
     print
     print "Warning : Cannot find \"Image\" module."
     print "          Vinetto will only extract Type 2 thumbnails."
     print
     PIL = ""
-
-PPS_TYPES = ["undefined", "storage", "stream", "undefined", "undefined", "root"]
-
-header       = open("/usr/local/etc/vinetto/header","rb").read()
-quantization = open("/usr/local/etc/vinetto/quantization","rb").read()
-huffman      = open("/usr/local/etc/vinetto/huffman","rb").read()
 
 tDBfname,outputdir = getargs()
 
