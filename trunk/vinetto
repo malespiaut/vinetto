@@ -12,7 +12,7 @@
 # by the Free Software Foundation; either version 2 of the License, or (at
 # your option) any later version.
 # 
-# The Modeling Framework is distributed in the hope that it will be
+# Vinetto is distributed in the hope that it will be
 # useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
@@ -53,8 +53,8 @@ def getargs():
         return (tDBfname, dirTo)   
         
     except Exception,e :
-	    print e
-	    print "Usage: vinetto [ -d dir ] file"
+	    print >>sys.stderr, e
+	    print >>sys.stderr, "Usage: vinetto [ -d dir ] file"
 	    sys.exit(1)
 
 
@@ -75,8 +75,17 @@ def nextBlock (TDB, Table, i):
 
 
 if sys.byteorder != "little" :
-    print
-    print "Sorry, vinetto needs a little endian byte ordered platform."
+    print >>sys.stderr, ""
+    print >>sys.stderr, "Sorry, vinetto needs a little endian byte ordered platform."
+    sys.exit(1)
+
+tDBfname,outputdir = getargs()
+
+try :
+    mkdir(outputdir)
+    outputdir+="/"
+except:
+    print >>sys.stderr, "Error creating", outputdir
     sys.exit(1)
 
 try:
@@ -86,30 +95,21 @@ try:
     quantization = open("/usr/local/etc/vinetto/quantization","rb").read()
     huffman      = open("/usr/local/etc/vinetto/huffman","rb").read()
 except:
-    print
-    print "Warning : Cannot find \"Image\" module."
-    print "          Vinetto will only extract Type 2 thumbnails."
-    print
+    print >>sys.stderr, ""
+    print >>sys.stderr, "Warning : Cannot find \"Image\" module."
+    print >>sys.stderr, "          Vinetto will only extract Type 2 thumbnails."
+    print >>sys.stderr, ""
     PIL = ""
-
-tDBfname,outputdir = getargs()
-
-try :
-    mkdir(outputdir)
-    outputdir+="/"
-except:
-    print "Error creating", outputdir
-    sys.exit(1)
 
 thumbsDB = open(tDBfname,"rb").read()
 longueur = len(thumbsDB)
 
-if (longueur % 512 ) != 0 : print " *** Warning : length " + sys.argv[1] + " : " + str(longueur) + ", non multiple 512"
+if (longueur % 512 ) != 0 : print >>sys.stderr,  " *** Warning : length " + tDBfname + " : " + str(longueur) + ", non multiple 512"
 
 # -----------------------------------------------------------------------------
 # Analyzing header block ...
 
-if "\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" != thumbsDB[0:8] : print " *** Warning  " + sys.argv[1] + " : header signature error "
+if "\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" != thumbsDB[0:8] : print >>sys.stderr, " *** Warning  " + tDBfname + " : header signature error "
 
 nbFATblocks = unpack("l",thumbsDB[0x2c:0x2c+4])[0]
 
@@ -224,17 +224,17 @@ while currentBlock != -2 :
     
                 # is EOI = 0xffd9 ?
                 if unpack("H", sr[longueur-2:longueur])[0] != 0xd9ff :
-                    print " *** Err : missing EOI in stream", SID
+                    print >>sys.stderr, " *** Err : missing EOI in stream", SID
                     sys.exit(2)
                 # --------------------------- header 1 ----------------------------------------    
                 # is first header OK ?
                 if  unpack("h", sr[0:2])[0] != 0x0c :
-                    print " *** Err : unrecognized header in stream", SID
+                    print >>sys.stderr, " *** Err : unrecognized header in stream", SID
                     sys.exit(3)
     
                 # is length OK ?
                 if  unpack("H", sr[8:10])[0] != (longueur - 0x0c) :
-                    print " *** Err : length error in stream", SID
+                    print >>sys.stderr, " *** Err : length error in stream", SID
                     sys.exit(4)
                 # --------------------------- header 2 ---------------------------------------- 
                 # is it a type 2 thumbnail ? (full jpeg)
@@ -243,7 +243,7 @@ while currentBlock != -2 :
                 elif  unpack("L",sr[0x0c:0x10])[0] == 1 :
                     # is second header OK ?
                     if  unpack("H", sr[0x0c+4:0x0c+6])[0] != (longueur - 0x0c - 0x10) :
-                        print " *** Err : length(2) error in stream", SID
+                        print >>sys.stderr, " *** Err : length(2) error in stream", SID
                         sys.exit(5)
                     # Type 1 TN processing ...
                     
@@ -262,7 +262,7 @@ while currentBlock != -2 :
                         im.save(outputdir + SIDstr + ".jpg")
                     
                 else :
-                    print " *** Err : header (2) error in stream", SID
+                    print >>sys.stderr, " *** Err : header (2) error in stream", SID
                     sys.exit(6)
 
             # -----------------------------------------------------------------
