@@ -1,0 +1,15 @@
+                                  Vinetto
+
+                       http://vinetto.sourceforge.net
+
+                     Michel Roukine <rukin@users.sf.net>
+
+
+Installation
+------------
+
+1) tar xvzf vinetto-XXX.tar.gz
+
+2) cd vinetto-XXX
+
+3) python setup.py install
