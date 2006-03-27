@@ -12,4 +12,4 @@ Installation
 
 2) cd vinetto-XXX
 
-3) python setup.py install
+3) python setup.py install      # with super user privileges
