@@ -71,7 +71,11 @@ def nextBlock (TDB, Table, i):
     iSECT = i % 128 # SECTor to search in the FAT block
     offset = Table [iFAT] * 512 + 0x200 + iSECT*4
     return unpack("l", TDB[offset:offset+4])[0]
-    
+
+if sys.byteorder != "little" :
+    print
+    print "Sorry, vinetto needs a little endian byte ordered platform."
+    sys.exit(1)
 
 PPS_TYPES = ["undefined", "storage", "stream", "undefined", "undefined", "root"]
 
