@@ -91,9 +91,9 @@ except:
 try:
     import Image
     PIL = "imported"
-    header       = open("/usr/local/etc/vinetto/header","rb").read()
-    quantization = open("/usr/local/etc/vinetto/quantization","rb").read()
-    huffman      = open("/usr/local/etc/vinetto/huffman","rb").read()
+    header       = open("/usr/share/vinetto/header","rb").read()
+    quantization = open("/usr/share/vinetto/quantization","rb").read()
+    huffman      = open("/usr/share/vinetto/huffman","rb").read()
 except:
     print >>sys.stderr, ""
     print >>sys.stderr, "Warning : Cannot find \"Image\" module."
