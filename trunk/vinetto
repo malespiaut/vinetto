@@ -25,7 +25,6 @@
 
 import sys
 import StringIO
-import Image
 import getopt
 
 from os.path import basename
@@ -77,6 +76,16 @@ if sys.byteorder != "little" :
     print "Sorry, vinetto needs a little endian byte ordered platform."
     sys.exit(1)
 
+try:
+    import Image
+    PIL = "imported"
+except:
+    print
+    print "Warning : Cannot find \"Image\" module."
+    print "          Vinetto will only extract Type 2 thumbnails."
+    print
+    PIL = ""
+
 PPS_TYPES = ["undefined", "storage", "stream", "undefined", "undefined", "root"]
 
 header       = open("/usr/local/etc/vinetto/header","rb").read()
@@ -84,12 +93,13 @@ quantization = open("/usr/local/etc/vinetto/quantization","rb").read()
 huffman      = open("/usr/local/etc/vinetto/huffman","rb").read()
 
 tDBfname,outputdir = getargs()
+
 try :
-    outputdir+="/"
     mkdir(outputdir)
+    outputdir+="/"
 except:
     print "Error creating", outputdir
-    sys.exit(10)
+    sys.exit(1)
 
 thumbsDB = open(tDBfname,"rb").read()
 longueur = len(thumbsDB)
@@ -242,12 +252,13 @@ while currentBlock != -2 :
                     type1sr = type1sr + sr[0x1e:0x34]
                     type1sr = type1sr + huffman
                     type1sr = type1sr + sr[0x34:]
-
-                    im = Image.open(StringIO.StringIO(type1sr))
-                    r,g,b,a=im.split()
-                    im = Image.merge("RGB", (b,g,r))
-                    im = im.transpose(Image.FLIP_TOP_BOTTOM)
-                    im.save(outputdir + SIDstr + ".jpg")
+                    
+                    if PIL == "imported" :
+                        im = Image.open(StringIO.StringIO(type1sr))
+                        r,g,b,a=im.split()
+                        im = Image.merge("RGB", (b,g,r))
+                        im = im.transpose(Image.FLIP_TOP_BOTTOM)
+                        im.save(outputdir + SIDstr + ".jpg")
                     
                 else :
                     print " *** Err : header (2) error in stream", SID
