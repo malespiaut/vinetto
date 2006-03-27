@@ -18,7 +18,7 @@
 # General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License along
-# with the Modeling Framework; if not, write to the Free Software
+# with the vinetto package; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 # 
 #-----------------------------------------------------------------------------
@@ -28,7 +28,6 @@ import StringIO
 import getopt
 
 from os.path import basename
-from os      import mkdir
 from struct  import pack
 from struct  import unpack
 from time    import ctime
@@ -80,14 +79,20 @@ if sys.byteorder != "little" :
     sys.exit(1)
 
 tDBfname,outputdir = getargs()
-
-try :
-    mkdir(outputdir)
+#---
+if outputdir != "" :
+   if not os.path.exists(outputdir):
+       try :
+            os.mkdir(outputdir)
+            print 'Note: ', outputdir, ' was created'
+       except :
+           print >>sys.stderr, "Error creating", outputdir
+           sys.exit(1)
+    elif not os.path.isdir(outputdir):
+        print >>sys.stderr, 'Error: ', outputdir, ' is not a directory'
+        sys.exit(1)
     outputdir+="/"
-except:
-    print >>sys.stderr, "Error creating", outputdir
-    sys.exit(1)
-
+#---
 try:
     import Image
     PIL = "imported"
