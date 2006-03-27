@@ -5,8 +5,32 @@
                      Michel Roukine <rukin@users.sf.net>
 
 
-Project overview [21 mar 2006]
-================
+
+Version pre alpha 0.01 (27 mar 2006)
+----------------------
+
+Introduction
+------------
+
+Vinetto is a forensics tool to examine Thumbs.db files.
+
+
+License
+-------
+
+This program is distributed under the GNU General Public License - see the
+accompanying COPYING file for more details.
+
+
+Thanks
+------
+The vinetto code was written with grateful thanks to:
+
+        Martin Schwartz - Author of Laola and libole2
+
+
+Project overview
+----------------
 1 - Context : The Windows systems (98, ME, 2000 and XP) can store thumbnails
 and metadata of the picture files contained in the directories of its FAT32 or
 NTFS filesystems. 
@@ -33,8 +57,33 @@ investigators to :
 FCCU GNU/Linux Forensic Boot CD.
 
 
+Requirements
+------------
+
+A little-endian *nix platform : at this stage vinetto doesn't work under
+MacOS/PPC.
+
+Python-2.2 or later. Vinetto is primarily developed against python-2.3.
+
+PIL (Python Imaging Library) 1.1.5 or later. PIL is used to attempt correct
+reconstitution the Type 1 thumbnails. 
+
+
+Current limitations
+-------------------
+
+AFAIK Windows(R)(TM) uses two types format to store thumbnails in its Thumbs.db
+files.
+I called these formats Type 1 and Type 2 .
+Type 2 is compliant to jpeg format. But Type 1 seems to be an obscure perversion
+of jpeg format with special headers, huffman and quantization tables.
+
+*** Currently, vinetto does not manage to reconstitute correctly the Type 1
+thumbnails. ***
+
+
 Usage
-=====
+-----
 
 Usage: vinetto [-d dir ] file
 
@@ -47,5 +96,5 @@ list should be written.
 standard output.
 
 --------------
-26 mar 2006
+27 mar 2006
 Michel Roukine
