@@ -72,7 +72,7 @@ reconstitution the Type 1 thumbnails.
 Current limitations
 -------------------
 
-AFAIK Windows(R)(TM) uses two types format to store thumbnails in its Thumbs.db
+AFAIK Windows(R)(TM) uses two format types to store thumbnails in its Thumbs.db
 files.
 I called these formats Type 1 and Type 2 .
 Type 2 is compliant to jpeg format. But Type 1 seems to be an obscure perversion
@@ -85,16 +85,15 @@ thumbnails. ***
 Usage
 -----
 
-Usage: vinetto [-d dir ] file
+Usage: vinetto [-o outputdir ] file
 
-	file : a Thumbs.db file
+	file : a Thumbs.db file.
 
-	-d dir : specify the location where extracted thumbnails and metadata
-list should be written.
+	-o outputdir : specify the location where extracted thumbnails should be
+	written.
 
-	If there is no directory specified, metadata list will be written on
-standard output.
+	Metadata list will be written on standard output.
 
 --------------
-27 mar 2006
+29 mar 2006
 Michel Roukine
