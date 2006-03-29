@@ -39,7 +39,7 @@ PPS_TYPES = ["undefined", "storage", "stream", "undefined", "undefined", "root"]
 def getargs():
 
     try:
-        opts,pargs = getopt.getopt (sys.argv[1:], 'd:')
+        opts,pargs = getopt.getopt (sys.argv[1:], 'o:')
     
         if len(pargs) != 1:
             raise RuntimeError, "One file required."
@@ -54,7 +54,7 @@ def getargs():
         
     except Exception,e :
 	    print >>sys.stderr, e
-	    print >>sys.stderr, "Usage: vinetto [ -d dir ] file"
+	    print >>sys.stderr, "Usage: vinetto [ -o outputdir ] file"
 	    sys.exit(1)
 
 
@@ -110,12 +110,16 @@ except:
 thumbsDB = open(tDBfname,"rb").read()
 longueur = len(thumbsDB)
 
-if (longueur % 512 ) != 0 : print >>sys.stderr,  " *** Warning : length " + tDBfname + " : " + str(longueur) + ", non multiple 512"
+if (longueur % 512 ) != 0 :
+    print >>sys.stderr,  " *** Error : length " + tDBfname + " : " + str(longueur) + ", non multiple 512"
+    sys.exit(7)
 
 # -----------------------------------------------------------------------------
 # Analyzing header block ...
 
-if "\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" != thumbsDB[0:8] : print >>sys.stderr, " *** Warning  " + tDBfname + " : header signature error "
+if "\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" != thumbsDB[0:8] :
+    print >>sys.stderr, " *** Error  " + tDBfname + " : header signature error "
+    sys.exit(8)
 
 nbFATblocks = unpack("l",thumbsDB[0x2c:0x2c+4])[0]
 
