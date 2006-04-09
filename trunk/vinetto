@@ -25,7 +25,7 @@ This file is part of Vinetto.
 -----------------------------------------------------------------------------
 """
 
-__version__ = "$Revision: 26$"
+__version__ = "$Revision: 26 $"
 # $Source$
 
 import sys
