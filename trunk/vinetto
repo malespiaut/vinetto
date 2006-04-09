@@ -1,27 +1,32 @@
 #! /usr/bin/env python
 # -*- coding: UTF-8 -*-
-#-----------------------------------------------------------------------------
-#
-# Vinetto : a forensics tool to examine Thumbs.db files
-# Copyright (C) 2005, 2006 by Michel Roukine
-# 
-# This file is part of Vinetto.
-# 
-# Vinetto is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as published
-# by the Free Software Foundation; either version 2 of the License, or (at
-# your option) any later version.
-# 
-# Vinetto is distributed in the hope that it will be
-# useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License along
-# with the vinetto package; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-# 
-#-----------------------------------------------------------------------------
+"""
+-----------------------------------------------------------------------------
+
+ Vinetto : a forensics tool to examine Thumbs.db files
+ Copyright (C) 2005, 2006 by Michel Roukine
+ 
+This file is part of Vinetto.
+ 
+ Vinetto is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License as published
+ by the Free Software Foundation; either version 2 of the License, or (at
+ your option) any later version.
+ 
+ Vinetto is distributed in the hope that it will be
+ useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License along
+ with the vinetto package; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ 
+-----------------------------------------------------------------------------
+"""
+
+__version__ = "$Revision: 26$"
+# $Source$
 
 import sys
 import os
@@ -29,15 +34,16 @@ import StringIO
 import getopt
 
 from os.path import basename
-from struct  import pack
-from struct  import unpack
+from struct  import pack, unpack
 from time    import ctime
+
+__author__ = 'Michel Roukine'
 
 PPS_TYPES = ["undefined", "storage", "stream", "undefined", "undefined", "root"]
 
 
 def getargs():
-
+    """Return arguments passed to vinetto on the command line.  """
     try:
         opts,pargs = getopt.getopt (sys.argv[1:], 'o:')
     
@@ -52,31 +58,33 @@ def getargs():
         
         return (tDBfname, dirTo)   
         
-    except Exception,e :
+    except Exception, e:
 	    print >>sys.stderr, e
 	    print >>sys.stderr, "Usage: vinetto [ -o outputdir ] file"
 	    sys.exit(1)
 
 
 def conv2pytime (win32filetime):
-
+    """Convert win32 timestamp to python time.  """
     SECS_BETWEEN_EPOCHS = 11644473600
     SECS_TO_100NS = 10000000
 
-    if win32filetime == 0 : return 0
+    if win32filetime == 0: return 0
     else : return (win32filetime / SECS_TO_100NS) - SECS_BETWEEN_EPOCHS
 
 
 def nextBlock (TDB, Table, i):
+    """Return next block.  """
     iFAT = i / 128  # FAT block number to search in
     iSECT = i % 128 # SECTor to search in the FAT block
     offset = Table [iFAT] * 512 + 0x200 + iSECT*4
     return unpack("l", TDB[offset:offset+4])[0]
 
 
-if sys.byteorder != "little" :
+if sys.byteorder != "little":
     print >>sys.stderr, ""
-    print >>sys.stderr, "Sorry, vinetto needs a little endian byte ordered platform."
+    print >>sys.stderr, "Sorry, vinetto needs a little endian byte ordered" \
+            + " platform."
     sys.exit(1)
 
 tDBfname,outputdir = getargs()
@@ -102,28 +110,29 @@ try:
     huffman      = open("/usr/share/vinetto/huffman","rb").read()
 except:
     print >>sys.stderr, ""
-    print >>sys.stderr, "Warning : Cannot find \"Image\" module."
-    print >>sys.stderr, "          Vinetto will only extract Type 2 thumbnails."
+    print >>sys.stderr, "Warning: Cannot find \"Image\" module."
+    print >>sys.stderr, "         Vinetto will only extract Type 2 thumbnails."
     print >>sys.stderr, ""
     PIL = ""
 
 thumbsDB = open(tDBfname,"rb").read()
 longueur = len(thumbsDB)
 
-if (longueur % 512 ) != 0 :
-    print >>sys.stderr,  " *** Error : length " + tDBfname + " : " + str(longueur) + ", non multiple 512"
+if (longueur % 512 ) != 0:
+    print >>sys.stderr, " *** Error : length " + tDBfname + " : " \
+                        + str(longueur) + ", non multiple 512"
     sys.exit(7)
 
 # -----------------------------------------------------------------------------
 # Analyzing header block ...
 
 if "\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" != thumbsDB[0:8] :
-    print >>sys.stderr, " *** Error  " + tDBfname + " : header signature error "
+    print >>sys.stderr, " *** Error  " + tDBfname + ": header signature error "
     sys.exit(8)
 
 nbFATblocks = unpack("l",thumbsDB[0x2c:0x2c+4])[0]
 
-REfirstBlock = unpack("l",thumbsDB[0x30:0x30+4])[0] # Root directory first block
+REfirstBlock = unpack("l",thumbsDB[0x30:0x30+4])[0] #Root directory first block
 
 firstMiniFATblock = unpack("l",thumbsDB[0x3c:0x3c+4])[0]
 
@@ -134,25 +143,25 @@ for i in range(nbFATblocks):
 # -----------------------------------------------------------------------------
 # Analyzing Root Entry directory ...
 
-currentBlock        = REfirstBlock
+currentBlock = REfirstBlock
 
 i = firstMiniFATblock
-MiniFATblocks=[]
-while i != -2 :
+MiniFATblocks = []
+while i != -2:
     MiniFATblocks.append(i)
     i = nextBlock (thumbsDB, FATblocks, i)
 
 offset = 0x200 + currentBlock*0x200
-firstMiniFATstreamBlock = unpack("l",  thumbsDB[offset+0x74:offset+0x78])[0]
+firstMiniFATstreamBlock = unpack("l", thumbsDB[offset+0x74:offset+0x78])[0]
 i = firstMiniFATstreamBlock
 MiniFATstreamBlocks=[]
-while i != -2 :
+while i != -2:
     MiniFATstreamBlocks.append(i)
     i = nextBlock (thumbsDB, FATblocks, i)
 
-SID                 = 0
+SID = 0
 
-while currentBlock != -2 :
+while currentBlock != -2:
     offset = 0x200 + currentBlock*0x200
     for i in range (offset, offset+0x200, 0x80):
         pps_rawname     = unpack("64s",thumbsDB[i     :i+0x40])[0]
@@ -163,7 +172,7 @@ while currentBlock != -2 :
         pps_sb          = unpack("l",  thumbsDB[i+0x74:i+0x78])[0]
         pps_size        = unpack("l",  thumbsDB[i+0x78:i+0x7c])[0]
     
-        if pps_type == 2 : # stream files extraction
+        if pps_type == 2: # stream files extraction
             rawname = unicode(pps_rawname,"utf-16")[0:(pps_sizeofname/2 - 1)]
             SIDstr  = "%04i" % SID
             bytesToWrite = pps_size
@@ -171,14 +180,17 @@ while currentBlock != -2 :
             if pps_size >= 4096 : # stream located in the FAT
                 sr = ""
                 currentStreamBlock = pps_sb
-                while currentStreamBlock != -2 :
+                while currentStreamBlock != -2:
                     sOffset = 0x200 + currentStreamBlock * 0x200
-                    if bytesToWrite >= 512 : sr = sr + thumbsDB[sOffset:sOffset +512] 
-                    else :                   sr = sr + thumbsDB[sOffset:sOffset + bytesToWrite] 
+                    if bytesToWrite >= 512: sr = sr + thumbsDB[sOffset:sOffset
+                                                               + 512] 
+                    else:                   sr = sr + thumbsDB[sOffset:sOffset
+                                                               + bytesToWrite] 
                     bytesToWrite = bytesToWrite - 512
-                    currentStreamBlock = nextBlock (thumbsDB, FATblocks, currentStreamBlock)
+                    currentStreamBlock = nextBlock (thumbsDB, FATblocks,
+                                                    currentStreamBlock)
 
-            else :                # stream located in the MiniFAT
+            else:                # stream located in the MiniFAT
                 sr = ""
                 currentStreamMiniBlock = pps_sb
                 while currentStreamMiniBlock != -2 :
@@ -192,11 +204,15 @@ while currentBlock != -2 :
 
                     sOffset = 0x200 + bl*0x200 + ioffset
 
-                    if bytesToWrite >= 64 : sr = sr + thumbsDB[sOffset:sOffset +64 ] 
-                    else :                  sr = sr + thumbsDB[sOffset:sOffset + bytesToWrite] 
+                    if bytesToWrite >= 64: sr = sr + thumbsDB[sOffset:sOffset +
+                                                              64 ] 
+                    else:                  sr = sr + thumbsDB[sOffset:sOffset +
+                                                              bytesToWrite] 
                     bytesToWrite = bytesToWrite - 64
                     # computing next currentStreamMiniBlock
-                    currentStreamMiniBlock = nextBlock (thumbsDB, MiniFATblocks, currentStreamMiniBlock)
+                    currentStreamMiniBlock = nextBlock (thumbsDB, 
+                                                        MiniFATblocks, 
+                                                        currentStreamMiniBlock)
 
             # extracted stream processing ... ---------------------------------
 
@@ -204,20 +220,21 @@ while currentBlock != -2 :
 
             # is this a Catalog ?
             if rawname == "Catalog" :
-                # -----------------------------------------------------------------------------
+                # -------------------------------------------------------------
                 # Skipping catalog header block ...
                 
                 recordLen = unpack("h", sr[0:2])[0]
                 indcat = recordLen
-                SID = SID -1
+                SID = SID - 1
 
                 print
-                print " Root Entry modify timestamp :", ctime(conv2pytime(REtimestamp))
+                print " Root Entry modify timestamp :", \
+                      ctime(conv2pytime(REtimestamp))
                 print
                 print " ------------------------------------------------------"
                 print
                 
-                # -----------------------------------------------------------------------------
+                # -------------------------------------------------------------
                 # Analyzing Catalog entries ..."
                 
                 while indcat < longueur :
@@ -227,34 +244,41 @@ while currentBlock != -2 :
                     nameLen     = recordLen - 0x14
                     formatstr   = str(nameLen) + "s"
                     originame   = sr[indcat+16 :indcat+16+nameLen]
-                    print  (" %04i" % num), " ", ctime(conv2pytime(timestamp)), " ", unicode(originame, 'utf-16').encode('iso-8859-1', 'replace')
+                    print  (" %04i" % num), " ", \
+                           ctime(conv2pytime(timestamp)), \
+                           " ", \
+                           unicode(originame,
+                                   'utf-16').encode('iso-8859-1', 'replace')
                     indcat = indcat + recordLen
        
             else :
     
                 # is EOI = 0xffd9 ?
                 if unpack("H", sr[longueur-2:longueur])[0] != 0xd9ff :
-                    print >>sys.stderr, " *** Err : missing EOI in stream", SID
+                    print >>sys.stderr, " *** Err: missing EOI in stream", SID
                     sys.exit(2)
-                # --------------------------- header 1 ----------------------------------------    
+                # --------------------------- header 1 ------------------------
                 # is first header OK ?
                 if  unpack("h", sr[0:2])[0] != 0x0c :
-                    print >>sys.stderr, " *** Err : unrecognized header in stream", SID
+                    print >>sys.stderr, \
+                          " *** Err: unrecognized header in stream", SID
                     sys.exit(3)
     
                 # is length OK ?
                 if  unpack("H", sr[8:10])[0] != (longueur - 0x0c) :
-                    print >>sys.stderr, " *** Err : length error in stream", SID
+                    print >>sys.stderr, " *** Err: length error in stream", SID
                     sys.exit(4)
-                # --------------------------- header 2 ---------------------------------------- 
+                # --------------------------- header 2 ------------------------
                 # is it a type 2 thumbnail ? (full jpeg)
                 if  sr[0x0c:0x10] == "\xff\xd8\xff\xe0" :
                     if outputdir != "" :
                         open(outputdir + SIDstr + ".jpg","wb").write(sr[0x0c:])
                 elif  unpack("L",sr[0x0c:0x10])[0] == 1 :
                     # is second header OK ?
-                    if  unpack("H", sr[0x0c+4:0x0c+6])[0] != (longueur - 0x0c - 0x10) :
-                        print >>sys.stderr, " *** Err : length(2) error in stream", SID
+                    if  unpack("H", sr[0x0c+4:0x0c+6])[0] != (longueur - 
+                                                              0x0c - 0x10):
+                        print >>sys.stderr, \
+                              " *** Err : length(2) error in stream", SID
                         sys.exit(5)
                     # Type 1 TN processing ...
                     
@@ -274,13 +298,14 @@ while currentBlock != -2 :
                             im.save(outputdir + SIDstr + ".jpg")
                     
                 else :
-                    print >>sys.stderr, " *** Err : header (2) error in stream", SID
+                    print >>sys.stderr,\
+                          " *** Err : header (2) error in stream", SID
                     sys.exit(6)
 
             # -----------------------------------------------------------------
 
-        elif pps_type == 5 : # Root Entry
+        elif pps_type == 5: # Root Entry
             REtimestamp = pps_ts2
         SID = SID + 1
 
-    currentBlock = nextBlock (thumbsDB, FATblocks, currentBlock)
+    currentBlock = nextBlock(thumbsDB, FATblocks, currentBlock)
