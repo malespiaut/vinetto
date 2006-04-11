@@ -30,8 +30,8 @@ SVN_REV = "$Revision$"
 import sys
 import os
 import StringIO
-import getopt
 
+from optparse import OptionParser
 from os.path import basename
 from struct  import pack, unpack
 from time    import ctime
@@ -44,24 +44,16 @@ PPS_TYPES = ["undefined", "storage", "stream", "undefined", "undefined", "root"]
 
 def getargs():
     """Return arguments passed to vinetto on the command line.  """
-    try:
-        opts,pargs = getopt.getopt (sys.argv[1:], 'o:')
+    versionString = "%prog " + __version__ + " (r" + SVN_REV[11:-2] +")"
+    parser = OptionParser(usage="%prog [-o DIR] file", version=versionString)
+    parser.add_option("-o", dest="outputdir",
+                      help="write thumbnails to DIR", metavar="DIR")
+    opts, pargs = parser.parse_args()
     
-        if len(pargs) != 1:
-            raise RuntimeError, "One file required."
-        else : tDBfname = pargs[0]
+    if len(pargs) != 1:
+        parser.error("incorrect number of arguments")
     
-        if len(opts) > 1:
-            raise RuntimeError, "Too much options."
-        elif len(opts) == 0 : dirTo = ""
-        else : dirTo = opts[0][1]
-        
-        return (tDBfname, dirTo)   
-        
-    except Exception, e:
-	    print >>sys.stderr, e
-	    print >>sys.stderr, "Usage: vinetto [ -o outputdir ] file"
-	    sys.exit(1)
+    return (pargs[0], opts.outputdir) 
 
 
 def conv2pytime (win32filetime):
@@ -86,8 +78,9 @@ if sys.byteorder != "little":
     print >>sys.stderr, "Sorry, vinetto needs a little endian byte ordered" \
             + " platform."
     sys.exit(1)
-
+    
 tDBfname,outputdir = getargs()
+
 #---
 if outputdir != "" :
     if not os.path.exists(outputdir):
