@@ -44,7 +44,10 @@ PPS_TYPES = ["undefined", "storage", "stream", "undefined", "undefined", "root"]
 
 def getargs():
     """Return arguments passed to vinetto on the command line.  """
-    versionString = "%prog " + __version__ + " (r" + SVN_REV[11:-2] +")"
+    versionString = "%prog " + __version__ + " (r" + SVN_REV[11:-2] +")\n\n" +\
+                    "Copyright (C) 2005-2006 Michel Roukine.\n" + \
+                    "Vinetto is open source software," + \
+                    " see http://vinetto.sourceforge.net/"
     parser = OptionParser(usage="%prog [-o DIR] file", version=versionString)
     parser.add_option("-o", dest="outputdir",
                       help="write thumbnails to DIR", metavar="DIR")
@@ -82,7 +85,7 @@ if sys.byteorder != "little":
 tDBfname,outputdir = getargs()
 
 #---
-if outputdir != "" :
+if outputdir != None :
     if not os.path.exists(outputdir):
         try :
             os.mkdir(outputdir)
