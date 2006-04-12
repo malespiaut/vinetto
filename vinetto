@@ -107,7 +107,7 @@ if outputdir != None :
     elif not os.path.isdir(outputdir):
         print >>sys.stderr, 'Error: ', outputdir, ' is not a directory'
         sys.exit(1)
-    elif not os.path(outputdir, os.W_OK):
+    elif not os.access(outputdir, os.W_OK):
         print >>sys.stderr, 'Error: ', outputdir, ' not writable'
         sys.exit(1)
     outputdir+="/"
