@@ -86,10 +86,10 @@ tDBfname,outputdir = getargs()
 
 # Testing file and DIR parameters
 
-if not os.access(tDBfname, F_OK):
+if not os.access(tDBfname, os.F_OK):
     print "Error: ", tDBfname, "does not exist"
     sys.exit(1)
-elif  not os.access(tDBfname, R_OK):
+elif  not os.access(tDBfname, os.R_OK):
     print "Error: ", tDBfname, "not readable"
     sys.exit(1)
         
@@ -104,7 +104,7 @@ if outputdir != None :
     elif not os.path.isdir(outputdir):
         print >>sys.stderr, 'Error: ', outputdir, ' is not a directory'
         sys.exit(1)
-    elif not os.path(outputdir, W_OK):
+    elif not os.path(outputdir, os.W_OK):
         print >>sys.stderr, 'Error: ', outputdir, ' not writable'
         sys.exit(1)
     outputdir+="/"
