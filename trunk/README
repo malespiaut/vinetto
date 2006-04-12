@@ -6,7 +6,7 @@
 
 
 
-Version pre alpha 0.02 (29 mar 2006)
+Version pre alpha 0.03 (12 apr 2006)
 ----------------------
 
 Introduction
@@ -63,7 +63,7 @@ Requirements
 A little-endian *nix platform : at this stage vinetto doesn't work under
 MacOS/PPC.
 
-Python-2.2 or later. Vinetto is primarily developed against python-2.3.
+Python-2.3 or later.
 
 PIL (Python Imaging Library) 1.1.5 or later. PIL is used to attempt correct
 reconstitution the Type 1 thumbnails. 
@@ -85,15 +85,17 @@ thumbnails. ***
 Usage
 -----
 
-Usage: vinetto [-o outputdir ] file
+Usage: vinetto [-o DIR] file
 
 	file : a Thumbs.db file.
 
-	-o outputdir : specify the location where extracted thumbnails should be
-	written.
+	options:
+	  --version   show program's version number and exit
+	  -h, --help  show help message and exit
+	  -o DIR      write thumbnails to DIR
 
 	Metadata list will be written on standard output.
 
 --------------
-29 mar 2006
+12 apr 2006
 Michel Roukine
