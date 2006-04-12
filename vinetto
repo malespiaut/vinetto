@@ -89,6 +89,9 @@ tDBfname,outputdir = getargs()
 if not os.access(tDBfname, os.F_OK):
     print "Error: ", tDBfname, "does not exist"
     sys.exit(1)
+elif  not os.path.isfile(tDBfname):
+    print "Error: ", tDBfname, "not a file"
+    sys.exit(1)
 elif  not os.access(tDBfname, os.R_OK):
     print "Error: ", tDBfname, "not readable"
     sys.exit(1)
