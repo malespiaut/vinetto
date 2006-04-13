@@ -26,6 +26,8 @@ This file is part of Vinetto.
 """
 
 __revision__ = "$Revision$"
+__version__ = "0.03"
+__author__ = 'Michel Roukine'
 
 import sys
 import os
@@ -34,9 +36,6 @@ import StringIO
 from optparse import OptionParser
 from struct  import unpack
 from time    import ctime
-
-__version__ = "0.03"
-__author__ = 'Michel Roukine'
 
 PPS_TYPES = ["undefined", "storage", "stream", "undefined", "undefined", "root"]
 
@@ -102,7 +101,7 @@ if outputdir != None :
         try :
             os.mkdir(outputdir)
             print 'Note: ', outputdir, ' was created'
-        except :
+        except EnvironmentError, e:
             print >> sys.stderr, "Error creating", outputdir
             sys.exit(1)
     elif not os.path.isdir(outputdir):
@@ -120,7 +119,7 @@ try:
     header       = open("/usr/share/vinetto/header","rb").read()
     quantization = open("/usr/share/vinetto/quantization","rb").read()
     huffman      = open("/usr/share/vinetto/huffman","rb").read()
-except:
+except EnvironmentError, e:
     print >> sys.stderr, ""
     print >> sys.stderr, "Warning: Cannot find \"Image\" module."
     print >> sys.stderr, "         Vinetto will only extract Type 2 thumbnails."
@@ -166,7 +165,7 @@ while i != -2:
 offset = 0x200 + currentBlock * 0x200
 firstMiniFATstreamBlock = unpack("l", thumbsDB[offset+0x74:offset+0x78])[0]
 i = firstMiniFATstreamBlock
-MiniFATstreamBlocks=[]
+MiniFATstreamBlocks = []
 while i != -2:
     MiniFATstreamBlocks.append(i)
     i = nextBlock (thumbsDB, FATblocks, i)
@@ -194,10 +193,10 @@ while currentBlock != -2:
                 currentStreamBlock = pps_sb
                 while currentStreamBlock != -2:
                     sOffset = 0x200 + currentStreamBlock * 0x200
-                    if bytesToWrite >= 512: sr = sr + thumbsDB[sOffset:sOffset
-                                                               + 512] 
-                    else:                   sr = sr + thumbsDB[sOffset:sOffset
-                                                               + bytesToWrite] 
+                    if bytesToWrite >= 512:
+                        sr = sr + thumbsDB[sOffset:sOffset + 512] 
+                    else:
+                        sr = sr + thumbsDB[sOffset:sOffset + bytesToWrite] 
                     bytesToWrite = bytesToWrite - 512
                     currentStreamBlock = nextBlock (thumbsDB, FATblocks,
                                                     currentStreamBlock)
@@ -216,10 +215,10 @@ while currentBlock != -2:
 
                     sOffset = 0x200 + bl*0x200 + ioffset
 
-                    if bytesToWrite >= 64: sr = sr + thumbsDB[sOffset:sOffset +
-                                                              64 ] 
-                    else:                  sr = sr + thumbsDB[sOffset:sOffset +
-                                                              bytesToWrite] 
+                    if bytesToWrite >= 64:
+                        sr = sr + thumbsDB[sOffset:sOffset + 64 ] 
+                    else:
+                        sr = sr + thumbsDB[sOffset:sOffset + bytesToWrite] 
                     bytesToWrite = bytesToWrite - 64
                     # computing next currentStreamMiniBlock
                     currentStreamMiniBlock = nextBlock (thumbsDB, 
@@ -247,7 +246,7 @@ while currentBlock != -2:
                 print
                 
                 # -------------------------------------------------------------
-                # Analyzing Catalog entries ..."
+                # Analyzing Catalog entries ...
                 
                 while indcat < longueur :
                     recordLen   = unpack("h", sr[indcat   :indcat+2])[0]
