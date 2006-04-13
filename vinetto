@@ -26,7 +26,7 @@ This file is part of Vinetto.
 """
 
 __revision__ = "$Revision$"
-__version__ = "0.03"
+__version__ = "0.04"
 __author__ = 'Michel Roukine'
 
 import sys
