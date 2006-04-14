@@ -293,7 +293,7 @@ while currentBlock != -2:
                         sys.exit(5)
                     # Type 1 TN processing ...
                     
-                    if (PIL == "imported") and (output != None):
+                    if (PIL == "imported") and (outputdir != None):
                                         
                         type1sr = header[:0x14]
                         type1sr = type1sr + quantization
