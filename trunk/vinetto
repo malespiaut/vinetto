@@ -293,7 +293,7 @@ while currentBlock != -2:
                         sys.exit(5)
                     # Type 1 TN processing ...
                     
-                    if PIL == "imported" :
+                    if (PIL == "imported") and (output != None):
                                         
                         type1sr = header[:0x14]
                         type1sr = type1sr + quantization
@@ -305,8 +305,7 @@ while currentBlock != -2:
                         r, g, b, a = im.split()
                         im = Image.merge("RGB", (b, g, r))
                         im = im.transpose(Image.FLIP_TOP_BOTTOM)
-                        if outputdir != None :
-                            im.save(outputdir + SIDstr + ".jpg")
+                        im.save(outputdir + SIDstr + ".jpg")
                     
                 else :
                     print >> sys.stderr, \
