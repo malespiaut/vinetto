@@ -119,7 +119,7 @@ try:
     header       = open("/usr/share/vinetto/header","rb").read()
     quantization = open("/usr/share/vinetto/quantization","rb").read()
     huffman      = open("/usr/share/vinetto/huffman","rb").read()
-except EnvironmentError, e:
+except ImportError, e:
     print >> sys.stderr, ""
     print >> sys.stderr, "Warning: Cannot find \"Image\" module."
     print >> sys.stderr, "         Vinetto will only extract Type 2 thumbnails."
