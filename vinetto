@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/python
 # -*- coding: UTF-8 -*-
 """
 -----------------------------------------------------------------------------
@@ -35,9 +35,12 @@ import StringIO
 
 from optparse import OptionParser
 from struct  import unpack
+from binascii import unhexlify
 from time    import ctime
 
 PPS_TYPES = ["undefined", "storage", "stream", "undefined", "undefined", "root"]
+EOI = unhexlify('ffd9')
+HEADER1 = unhexlify('0c00')
 
 
 def getargs():
@@ -73,7 +76,7 @@ def nextBlock (TDB, Table, indx):
     iFAT = indx / 128  # FAT block number to search in
     iSECT = indx % 128 # SECTor to search in the FAT block
     offst = Table [iFAT] * 512 + 0x200 + iSECT*4
-    return unpack("l", TDB[offst:offst+4])[0]
+    return unpack("<l", TDB[offst:offst+4])[0]
 
 
 if sys.byteorder != "little":
@@ -141,16 +144,16 @@ if "\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" != thumbsDB[0:8] :
     print >> sys.stderr, " *** Error  " + tDBfname + ": header signature error "
     sys.exit(8)
 
-nbFATblocks = unpack("l", thumbsDB[0x2c:0x2c+4])[0]
+nbFATblocks = unpack("<l", thumbsDB[0x2c:0x2c+4])[0]
 
-REfirstBlock = unpack("l", thumbsDB[0x30:0x30+4])[0] #Root directory first block
+REfirstBlock = unpack("<l", thumbsDB[0x30:0x30+4])[0] #Root directory 1st block
 
-firstMiniFATblock = unpack("l", thumbsDB[0x3c:0x3c+4])[0]
+firstMiniFATblock = unpack("<l", thumbsDB[0x3c:0x3c+4])[0]
 
 FATblocks = []
 for i in range(nbFATblocks):
     offset = 0x4c + i*4
-    FATblocks.append(unpack("l", thumbsDB[offset:offset + 4])[0])
+    FATblocks.append(unpack("<l", thumbsDB[offset:offset + 4])[0])
 # -----------------------------------------------------------------------------
 # Analyzing Root Entry directory ...
 
@@ -163,7 +166,7 @@ while i != -2:
     i = nextBlock (thumbsDB, FATblocks, i)
 
 offset = 0x200 + currentBlock * 0x200
-firstMiniFATstreamBlock = unpack("l", thumbsDB[offset+0x74:offset+0x78])[0]
+firstMiniFATstreamBlock = unpack("<l", thumbsDB[offset+0x74:offset+0x78])[0]
 i = firstMiniFATstreamBlock
 MiniFATstreamBlocks = []
 while i != -2:
@@ -176,12 +179,12 @@ while currentBlock != -2:
     offset = 0x200 + currentBlock*0x200
     for i in range (offset, offset+0x200, 0x80):
         pps_rawname     = unpack("64s", thumbsDB[i     :i+0x40])[0]
-        pps_sizeofname  = unpack("h",  thumbsDB[i+0x40:i+0x42])[0]
+        pps_sizeofname  = unpack("<h",  thumbsDB[i+0x40:i+0x42])[0]
         pps_type        = unpack("b",  thumbsDB[i+0x42:i+0x43])[0]
-        pps_ts1         = unpack("Q",  thumbsDB[i+0x64:i+0x6c])[0]
-        pps_ts2         = unpack("Q",  thumbsDB[i+0x6c:i+0x74])[0]
-        pps_sb          = unpack("l",  thumbsDB[i+0x74:i+0x78])[0]
-        pps_size        = unpack("l",  thumbsDB[i+0x78:i+0x7c])[0]
+        pps_ts1         = unpack("<Q",  thumbsDB[i+0x64:i+0x6c])[0]
+        pps_ts2         = unpack("<Q",  thumbsDB[i+0x6c:i+0x74])[0]
+        pps_sb          = unpack("<l",  thumbsDB[i+0x74:i+0x78])[0]
+        pps_size        = unpack("<l",  thumbsDB[i+0x78:i+0x7c])[0]
     
         if pps_type == 2: # stream files extraction
             rawname = unicode(pps_rawname,"utf-16")[0:(pps_sizeofname/2 - 1)]
@@ -234,7 +237,7 @@ while currentBlock != -2:
                 # -------------------------------------------------------------
                 # Skipping catalog header block ...
                 
-                recordLen = unpack("h", sr[0:2])[0]
+                recordLen = unpack("<h", sr[0:2])[0]
                 indcat = recordLen
                 SID = SID - 1
 
@@ -249,9 +252,9 @@ while currentBlock != -2:
                 # Analyzing Catalog entries ...
                 
                 while indcat < longueur :
-                    recordLen   = unpack("h", sr[indcat   :indcat+2])[0]
-                    num         = unpack("l", sr[indcat+4 :indcat+8])[0]
-                    timestamp   = unpack("Q", sr[indcat+8 :indcat+16])[0]
+                    recordLen   = unpack("<h", sr[indcat   :indcat+2])[0]
+                    num         = unpack("<l", sr[indcat+4 :indcat+8])[0]
+                    timestamp   = unpack("<Q", sr[indcat+8 :indcat+16])[0]
                     nameLen     = recordLen - 0x14
                     formatstr   = str(nameLen) + "s"
                     originame   = sr[indcat+16 :indcat+16+nameLen]
@@ -265,18 +268,18 @@ while currentBlock != -2:
             else :
     
                 # is EOI = 0xffd9 ?
-                if unpack("H", sr[longueur-2:longueur])[0] != 0xd9ff :
+                if sr[longueur-2:longueur] != EOI:
                     print >> sys.stderr, " *** Err: missing EOI in stream", SID
                     sys.exit(2)
                 # --------------------------- header 1 ------------------------
                 # is first header OK ?
-                if  unpack("h", sr[0:2])[0] != 0x0c :
+                if sr[0:2] != HEADER1:
                     print >> sys.stderr, \
                           " *** Err: unrecognized header in stream", SID
                     sys.exit(3)
     
                 # is length OK ?
-                if  unpack("H", sr[8:10])[0] != (longueur - 0x0c) :
+                if  unpack("<H", sr[8:10])[0] != (longueur - 0x0c) :
                     print >> sys.stderr, " *** Err: length error in stream", SID
                     sys.exit(4)
                 # --------------------------- header 2 ------------------------
@@ -284,9 +287,9 @@ while currentBlock != -2:
                 if  sr[0x0c:0x10] == "\xff\xd8\xff\xe0" :
                     if outputdir != None :
                         open(outputdir + SIDstr + ".jpg","wb").write(sr[0x0c:])
-                elif  unpack("L",sr[0x0c:0x10])[0] == 1 :
+                elif  unpack("<L",sr[0x0c:0x10])[0] == 1 :
                     # is second header OK ?
-                    if  unpack("H", sr[0x0c+4:0x0c+6])[0] != (longueur - 
+                    if  unpack("<H", sr[0x0c+4:0x0c+6])[0] != (longueur - 
                                                               0x0c - 0x10):
                         print >> sys.stderr, \
                               " *** Err : length(2) error in stream", SID
