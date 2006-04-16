@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/local/bin/python
 # -*- coding: UTF-8 -*-
 """
 -----------------------------------------------------------------------------
@@ -78,12 +78,6 @@ def nextBlock (TDB, Table, indx):
     offst = Table [iFAT] * 512 + 0x200 + iSECT*4
     return unpack("<l", TDB[offst:offst+4])[0]
 
-
-if sys.byteorder != "little":
-    print >> sys.stderr, ""
-    print >> sys.stderr, "Sorry, vinetto needs a little endian byte ordered" \
-             + " platform."
-    sys.exit(1)
     
 tDBfname, outputdir = getargs()
 
@@ -154,6 +148,7 @@ FATblocks = []
 for i in range(nbFATblocks):
     offset = 0x4c + i*4
     FATblocks.append(unpack("<l", thumbsDB[offset:offset + 4])[0])
+
 # -----------------------------------------------------------------------------
 # Analyzing Root Entry directory ...
 
@@ -167,6 +162,7 @@ while i != -2:
 
 offset = 0x200 + currentBlock * 0x200
 firstMiniFATstreamBlock = unpack("<l", thumbsDB[offset+0x74:offset+0x78])[0]
+
 i = firstMiniFATstreamBlock
 MiniFATstreamBlocks = []
 while i != -2:
@@ -185,9 +181,9 @@ while currentBlock != -2:
         pps_ts2         = unpack("<Q",  thumbsDB[i+0x6c:i+0x74])[0]
         pps_sb          = unpack("<l",  thumbsDB[i+0x74:i+0x78])[0]
         pps_size        = unpack("<l",  thumbsDB[i+0x78:i+0x7c])[0]
-    
+        
         if pps_type == 2: # stream files extraction
-            rawname = unicode(pps_rawname,"utf-16")[0:(pps_sizeofname/2 - 1)]
+            rawname = unicode(pps_rawname,"utf-16-le")[0:(pps_sizeofname/2 - 1)]
             SIDstr  = "%04i" % SID
             bytesToWrite = pps_size
 
@@ -256,13 +252,13 @@ while currentBlock != -2:
                     num         = unpack("<l", sr[indcat+4 :indcat+8])[0]
                     timestamp   = unpack("<Q", sr[indcat+8 :indcat+16])[0]
                     nameLen     = recordLen - 0x14
-                    formatstr   = str(nameLen) + "s"
+
                     originame   = sr[indcat+16 :indcat+16+nameLen]
                     print  (" %04i" % num), " ", \
                            ctime(conv2pytime(timestamp)), \
                            " ", \
                            unicode(originame,
-                                   'utf-16').encode('iso-8859-1', 'replace')
+                                   'utf-16-le').encode('iso-8859-1', 'replace')
                     indcat = indcat + recordLen
        
             else :
