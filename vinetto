@@ -32,15 +32,20 @@ __author__ = 'Michel Roukine'
 import sys
 import os
 import StringIO
+import vinreport
 
 from optparse import OptionParser
 from struct  import unpack
 from binascii import unhexlify
 from time    import ctime
 
+
 PPS_TYPES = ["undefined", "storage", "stream", "undefined", "undefined", "root"]
 EOI = unhexlify('ffd9')
 HEADER1 = unhexlify('0c00')
+
+Typ1Extracted = 0
+Typ2Extracted = 0
 
 
 def getargs():
@@ -49,15 +54,21 @@ def getargs():
              "Copyright (C) 2005-2006 Michel Roukine.\n" + \
              "Vinetto is open source software," + \
              " see http://vinetto.sourceforge.net/"
-    parser = OptionParser(usage="%prog [-o DIR] file", version=verstr)
+    parser = OptionParser(usage="%prog [OPTIONS] [-o DIR] file", version=verstr)
     parser.add_option("-o", dest="outputdir",
                       help="write thumbnails to DIR", metavar="DIR")
+    parser.set_defaults(htmlrep=False)
+    parser.add_option("-H", action="store_true", dest="htmlrep",
+                      help="write html report to DIR")
     opts, pargs = parser.parse_args()
     
     if len(pargs) != 1:
         parser.error("incorrect number of arguments")
+        
+    if (opts.outputdir == None) and (opts.htmlrep == True):
+        parser.error("-H option requires -o with a directory name")
     
-    return (pargs[0], opts.outputdir) 
+    return (pargs[0], opts.outputdir, opts.htmlrep) 
 
 
 def conv2pytime (win32filetime):
@@ -79,7 +90,7 @@ def nextBlock (TDB, Table, indx):
     return unpack("<l", TDB[offst:offst+4])[0]
 
     
-tDBfname, outputdir = getargs()
+tDBfname, outputdir, htmlrep = getargs()
 
 # Testing file and DIR parameters
 
@@ -108,6 +119,10 @@ if outputdir != None :
         print >> sys.stderr, 'Error: ', outputdir, ' not writable'
         sys.exit(1)
     outputdir += "/"
+ 
+    if htmlrep == True:
+        report = vinreport.HtRep(tDBfname, outputdir, __version__ + " (r" + \
+                                 __revision__[11:-2] +")")
 
 #---
 try:
@@ -240,6 +255,8 @@ while currentBlock != -2:
                 print
                 print " Root Entry modify timestamp :", \
                       ctime(conv2pytime(REtimestamp))
+                if htmlrep == True:
+                        report.headwrite (ctime(conv2pytime(REtimestamp)))
                 print
                 print " ------------------------------------------------------"
                 print
@@ -254,11 +271,13 @@ while currentBlock != -2:
                     nameLen     = recordLen - 0x14
 
                     originame   = sr[indcat+16 :indcat+16+nameLen]
-                    print  (" %04i" % num), " ", \
-                           ctime(conv2pytime(timestamp)), \
-                           " ", \
-                           unicode(originame,
+                    TNid = "%04i" % num
+                    TNtimestamp = ctime(conv2pytime(timestamp))
+                    TNname = unicode(originame,
                                    'utf-16-le').encode('iso-8859-1', 'replace')
+                    print  " " + TNid, " ", TNtimestamp, " ", TNname
+                    if htmlrep == True:
+                        report.addTN (TNid, TNtimestamp, TNname)
                     indcat = indcat + recordLen
        
             else :
@@ -283,6 +302,7 @@ while currentBlock != -2:
                 if  sr[0x0c:0x10] == "\xff\xd8\xff\xe0" :
                     if outputdir != None :
                         open(outputdir + SIDstr + ".jpg","wb").write(sr[0x0c:])
+                        Typ2Extracted += 1
                 elif  unpack("<L",sr[0x0c:0x10])[0] == 1 :
                     # is second header OK ?
                     if  unpack("<H", sr[0x0c+4:0x0c+6])[0] != (longueur - 
@@ -305,6 +325,7 @@ while currentBlock != -2:
                         im = Image.merge("RGB", (b, g, r))
                         im = im.transpose(Image.FLIP_TOP_BOTTOM)
                         im.save(outputdir + SIDstr + ".jpg")
+                        Typ1Extracted += 1
                     
                 else :
                     print >> sys.stderr, \
@@ -318,3 +339,18 @@ while currentBlock != -2:
         SID = SID + 1
 
     currentBlock = nextBlock(thumbsDB, FATblocks, currentBlock)
+
+print
+print " ------------------------------------------------------"
+print
+
+if (Typ1Extracted + Typ2Extracted) > 0:
+    if Typ1Extracted > 0:
+        print "    ", Typ1Extracted, "Type 1 thumbnails extracted to", outputdir
+    if Typ2Extracted > 0:
+        print "    ", Typ2Extracted, "Type 2 thumbnails extracted to", outputdir
+    print
+    
+if htmlrep == True:
+    report.close(Typ1Extracted, Typ2Extracted)
+    
