@@ -5,6 +5,20 @@
                      Michel Roukine <rukin@users.sf.net>
 
 
+
+
+
+Prerequisites
+-------------
+
+a) Python-2.3 or later. 
+
+b) PIL (Python Imaging Library) 1.1.5 or later.
+
+   To download PIL, go to :
+   http://www.pythonware.com/products/pil/
+
+
 Installation
 ------------
 
@@ -17,5 +31,5 @@ following commands as a super user:
 
 3) python setup.py install
 
-This will install vinetto in /usr/bin and resource files in /usr/share/vinetto.
+This will install vinetto in appropriated path and resource files in /usr/share/vinetto.
 
