@@ -6,7 +6,7 @@
 
 
 
-Version alpha 0.04 (18 apr 2006)
+Version alpha 0.05 (25 apr 2006)
 ------------------
 
 Introduction
@@ -26,9 +26,11 @@ accompanying COPYING file for more details.
 
 Thanks
 ------
-The vinetto code was written with grateful thanks to:
+Many thanks to Christophe Monniez (d-fence.be) for the idea of this tool and
+for his encouragements.
 
-        Martin Schwartz - Author of Laola and libole2
+The vinetto code was written with grateful thanks to Martin Schwartz, author of
+Laola and its Hacking guide to the binary structure of Ole / Compound Documents.
 
 
 Project overview
@@ -75,8 +77,8 @@ PIL (Python Imaging Library) 1.1.5 or later. PIL is used to attempt correct
 reconstitution the Type 1 thumbnails. 
 
 
-Current limitations
--------------------
+Current known limitations
+-------------------------
 
 AFAIK Windows(R)(TM) uses two format types to store thumbnails in its Thumbs.db
 files.
@@ -102,5 +104,5 @@ options:
 	Metadata list will be written on standard output.
 
 --------------
-18 apr 2006
+25 apr 2006
 Michel Roukine

@@ -26,7 +26,7 @@ This file is part of Vinetto.
 """
 
 __revision__ = "$Revision$"
-__version__ = "0.04"
+__version__ = "0.05"
 __author__ = 'Michel Roukine'
 
 import sys
@@ -199,7 +199,10 @@ while currentBlock != -2:
         
         if pps_type == 2: # stream files extraction
             rawname = unicode(pps_rawname,"utf-16-le")[0:(pps_sizeofname/2 - 1)]
-            SIDstr  = "%04i" % SID
+            #SIDstr  = "%04i" % SID
+            SIDstr = rawname [::-1]
+            if len(SIDstr) < 4:
+                SIDstr = "%04i" % int(SIDstr)
             bytesToWrite = pps_size
 
             if pps_size >= 4096 : # stream located in the FAT

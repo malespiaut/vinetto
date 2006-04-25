@@ -1,6 +1,6 @@
 from distutils.core import setup
 setup (name='vinetto',
-    version='0.04alpha',
+    version='0.05alpha',
     scripts=['vinetto'],
     py_modules=['vinreport'],
     data_files=[('/usr/share/vinetto', ['res/header', 'res/huffman', \
