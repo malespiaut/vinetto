@@ -26,7 +26,7 @@ This file is part of Vinetto.
 """
 
 __revision__ = "$Revision$"
-__version__ = "0.05"
+__version__ = "0.06"
 __author__ = 'Michel Roukine'
 
 import sys
@@ -46,6 +46,11 @@ HEADER1 = unhexlify('0c00')
 
 Typ1Extracted = 0
 Typ2Extracted = 0
+lastWritten = "0000"
+precNum = 0
+nbCatEnt = 0
+catIndxOutOfSeq = False
+tnStreamOutOfSeq = False
 
 
 def getargs():
@@ -275,10 +280,14 @@ while currentBlock != -2:
 
                     originame   = sr[indcat+16 :indcat+16+nameLen]
                     TNid = "%04i" % num
+                    if precNum != (num - 1):
+                        catIndxOutOfSeq = True
+                    precNum = num
                     TNtimestamp = ctime(conv2pytime(timestamp))
                     TNname = unicode(originame,
                                    'utf-16-le').encode('iso-8859-1', 'replace')
                     print  " " + TNid, " ", TNtimestamp, " ", TNname
+                    nbCatEnt += 1
                     if htmlrep == True:
                         report.addTN (TNid, TNtimestamp, TNname)
                     indcat = indcat + recordLen
@@ -305,6 +314,9 @@ while currentBlock != -2:
                 if  sr[0x0c:0x10] == "\xff\xd8\xff\xe0" :
                     if outputdir != None :
                         open(outputdir + SIDstr + ".jpg","wb").write(sr[0x0c:])
+                        if int(lastWritten) != int(SIDstr) - 1 : 
+                            tnStreamOutOfSeq = true
+                        lastWritten = SIDstr
                         Typ2Extracted += 1
                 elif  unpack("<L",sr[0x0c:0x10])[0] == 1 :
                     # is second header OK ?
@@ -328,6 +340,9 @@ while currentBlock != -2:
                         im = Image.merge("RGB", (b, g, r))
                         im = im.transpose(Image.FLIP_TOP_BOTTOM)
                         im.save(outputdir + SIDstr + ".jpg")
+                        if int(lastWritten) != int(SIDstr) - 1 : 
+                            tnStreamOutOfSeq = True
+                        lastWritten = SIDstr
                         Typ1Extracted += 1
                     
                 else :
@@ -347,12 +362,24 @@ print
 print " ------------------------------------------------------"
 print
 
+if catIndxOutOfSeq == True:
+    print >> sys.stderr, " ** Warning: ", tDBfname, "Catalog",\
+                         " index number out of sequence"
+
+if tnStreamOutOfSeq == True:
+    print >> sys.stderr, " ** Warning: ", tDBfname, \
+                         "thumbnail stream index number out of sequence"
+
 if (Typ1Extracted + Typ2Extracted) > 0:
     if Typ1Extracted > 0:
         print "    ", Typ1Extracted, "Type 1 thumbnails extracted to", outputdir
     if Typ2Extracted > 0:
         print "    ", Typ2Extracted, "Type 2 thumbnails extracted to", outputdir
     print
+    
+if  (outputdir != None) and ((Typ1Extracted + Typ2Extracted) != nbCatEnt):
+    print >> sys.stderr, " ** Warning: ", tDBfname, " -- number of extracted ", \
+                         "thumbnails does not match number of Catalog entries"
     
 if htmlrep == True:
     report.close(Typ1Extracted, Typ2Extracted)
