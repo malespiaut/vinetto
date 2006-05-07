@@ -26,22 +26,27 @@ This file is part of Vinetto.
 """
 
 __revision__ = "$Revision: 47 $"
-__version__ = "0.01"
+__version__ = "0.02"
 __author__ = 'Michel Roukine'
 
 HtHeader = []
 HtPicRow = []
+HtOrphans = []
 HtFooter = []
-IMGTAG = "<IMG SRC=\"./__TNID__.jpg\" ALT=\"__TNNAME__\">"
+IMGTAG = "<IMG SRC=\"./__TNFNAME__.jpg\" ALT=\"__TNNAME__\">"
 
 from time import time, ctime
-        
+from os.path import dirname, basename, abspath, getmtime
+from vinutils import getCatEntry       
+
 
 class Report:
     """ Vinetto report SuperClass.  """
     def __init__ (self, target, outputdir, verstr):
         """ Initialize a new Report instance.  """
-        self.target = target
+        self.tDBfname = basename(target)
+        self.tDBdirname = abspath(dirname(target))
+        self.tDBmtime = getmtime(target)
         self.outputdir = outputdir
         self.verstr = verstr
 
@@ -52,7 +57,6 @@ class HtRep(Report):
         """ Initialize a new HtRep instance.  """
         Report.__init__(self, tDBfname, outputdir, verstr)
         self.rownumber = 0
-        
         separatorID = 0
         
         for ligne in open("/usr/share/vinetto/HtRepTemplate.html",
@@ -66,13 +70,21 @@ class HtRep(Report):
             elif separatorID == 1:
                 HtPicRow.append(ligne)
             elif separatorID == 2:
+                HtOrphans.append(ligne)
+            elif separatorID == 3:
                 HtFooter.append(ligne)
               
         self.TNidList = []
         self.TNtsList = []
         self.TNnameList = []
         
-        self.repfile = open(outputdir + "index.html","w")
+        self.repfile = open(outputdir + "index.html", "w")
+    
+    
+    def SetFileSection (self, FileSize, md5):
+        """ Initialize data of the report file section.  """
+        self.FileSize = FileSize
+        self.md5 = md5
         
         
     def headwrite (self, REtst):
@@ -80,32 +92,28 @@ class HtRep(Report):
         
         for ligne in HtHeader:
             ligne = ligne.replace("__DATEREPORT__", "Report date : " + ctime(time()))
-            ligne = ligne.replace("__TDBFNAME__", "File : " + self.target)
+            ligne = ligne.replace("__TDBDIRNAME__", self.tDBdirname)
+            ligne = ligne.replace("__TDBFNAME__", self.tDBfname)
+            ligne = ligne.replace("__TDBMTIME__", ctime(self.tDBmtime))
+            ligne = ligne.replace("__FILESIZE__", str(self.FileSize))
+            ligne = ligne.replace("__MD5__", self.md5)
             ligne = ligne.replace("__ROOTENTRYTST__", \
                                   "Root Entry modify timestamp : " + REtst)
             self.repfile.write(ligne)
- 
-    
-    def addTN (self, TNid, TNtimestamp, TNname):
-        """ Sotre thumbnails elements.  """
-        self.TNidList.append(TNid)
-        self.TNtsList.append(TNtimestamp)
-        self.TNnameList.append(TNname)
-        
-        if len(self.TNidList) >= 5 :
-            self.rowflush()
 
-    
+
     def close(self, Typ1Extracted, Typ2Extracted):
         """ Terminate processing HtRep instance.  """
-        if len(self.TNidList) > 0:
-            self.rowflush()
-            
         typextract = ""
-        if Typ1Extracted > 0:
-            typextract = str(Typ1Extracted) + " Type 1 thumbnails extracted to " + self.outputdir
-        if Typ2Extracted > 0:
-            typextract += "<BR>" + str(Typ2Extracted) + " Type 2 thumbnails extracted to " + self.outputdir
+        if (Typ1Extracted + Typ2Extracted) == 0:
+            typextract = "0 thumbnail(s) extracted to " + self.outputdir
+        else:
+            if Typ1Extracted > 0:
+                typextract = str(Typ1Extracted) + \
+                " Type 1 thumbnails extracted to " + self.outputdir
+            if Typ2Extracted > 0:
+                typextract += "<BR>" + str(Typ2Extracted) + \
+                " Type 2 thumbnails extracted to " + self.outputdir
             
         for ligne in HtFooter:
             ligne = ligne.replace("__TYPEXTRACT__", typextract)
@@ -119,13 +127,13 @@ class HtRep(Report):
         self.rownumber += 1
         for ligne in HtPicRow:
             ligne = ligne.replace("__ROWNUMBER__", str(self.rownumber))
-            for j in range(len(self.TNidList)):
+            for j in range(len(self.tnId)):
                 ligne = ligne.replace("__TNfilled__" + str(j), "1")
-                buff = IMGTAG.replace("__TNID__", self.TNidList[j])
-                buff = buff.replace("__TNNAME__", self.TNnameList[j])
+                buff = IMGTAG.replace("__TNFNAME__", self.tnFname[j])
+                buff = buff.replace("__TNNAME__", self.tnName[j])
                 ligne = ligne.replace("__IMGTAG__" + str(j), buff)                
-                ligne = ligne.replace("__TNID__" + str(j), self.TNidList[j])
-            for j in range(len(self.TNidList),5):
+                ligne = ligne.replace("__TNID__" + str(j), self.tnId[j])
+            for j in range(len(self.tnId),5):
                 ligne = ligne.replace("__TNfilled__" + str(j), "0")
                 ligne = ligne.replace("__IMGTAG__" + str(j), " &nbsp; ")
                 ligne = ligne.replace("__TNID__" + str(j), " ")
@@ -134,12 +142,89 @@ class HtRep(Report):
             
         self.repfile.write("<TABLE WIDTH=\"720\"><TR><TD>&nbsp;</TD></TR>" + \
                            "<TR><TD><P ALIGN=\"LEFT\">")
-        for i in range(len(self.TNidList)):
-            self.repfile.write("<TT>" + self.TNidList[i] + " -- " + \
-                               self.TNtsList[i] + " -- " + \
-                               self.TNnameList[i] + "</TT><BR>\n")
+        for i in range(len(self.tnId)):
+            if self.tnName[i] != "":
+                self.repfile.write("<TT>" + self.tnId[i] + " -- " + \
+                               self.tnTs[i].replace("  ", " &nbsp;") + " -- " + \
+                               self.tnName[i] + "</TT><BR>\n")
+            else:
+                self.repfile.write("<TT STYLE=\"color: blue\">" + self.tnId[i] + " ** " + \
+                                   " no matching Catalog entry found " + \
+                                   " ** " + "</TT><BR>\n")
+                               
         self.repfile.write("</P></TD></TR><TR><TD>&nbsp;</TD></TR></TABLE>")
         
-        self.TNidList = []
-        self.TNtsList = []
-        self.TNnameList = []
+        self.tnId    = []
+        self.tnFname = []
+        self.tnTs    = []
+        self.tnName  = []
+
+
+    def printOrphanCatEnt(self, OrphanICat):
+        """ Print orphan catalog entry.  """    
+        if OrphanICat != []:
+            endOrphanSection = False
+            for ligne in HtOrphans:
+                if ligne.find("__ORPHANENTRY__") >= 0:
+                    oprhanLine = ligne
+                    break
+                else:
+                    self.repfile.write(ligne)
+
+            for iCat in OrphanICat:
+                catEntry = getCatEntry (iCat)
+                Ts = catEntry[0][0]
+                Name = catEntry[0][1]
+                str = "<TT>" + ("%04i" % iCat) + " -- " + \
+                      Ts.replace("  ", " &nbsp;") + " -- " + Name + "</TT><BR>\n"
+                ligne = oprhanLine.replace("__ORPHANENTRY__", str)
+                self.repfile.write(ligne)
+                           
+            for ligne in HtOrphans:
+                if ligne.find("__ORPHANENTRY__") < 0:
+                    if endOrphanSection:
+                        self.repfile.write(ligne)
+                else:
+                    endOrphanSection = True
+        
+            
+    def flush(self, nbTN1, nbTN2):
+        """ Process the report body and the report end.  """
+        from vinutils import TNStreams
+        from vinutils import Catalog
+
+        self.rownumber = 0
+        self.tnId    = []
+        self.tnFname = []
+        self.tnTs    = []
+        self.tnName  = []
+        
+#        for (iTN, vType, filename) in TNStreams:
+        for iTN in TNStreams:
+            for (vType, filename) in TNStreams[iTN]:
+                self.tnId.append("%04i" % iTN)
+                self.tnFname.append(filename)
+                catEntry = getCatEntry (iTN)
+                if len(catEntry) == 0:
+                    Ts = ""
+                    Name = ""
+                elif len(catEntry) >= 1:
+                # duplicate index numbers not properly handled !!!
+                    Ts = catEntry[0][0]
+                    Name = catEntry[0][1]
+                self.tnTs.append(Ts)
+                self.tnName.append(Name)
+                if len(self.tnId) >= 5:
+                    self.rowflush()
+            
+        if len(self.tnId) > 0:
+            self.rowflush()
+            
+        # Scanning for orphan catalog entries
+        OrphanICat = []
+        for iCat in Catalog:
+            if not TNStreams.has_key(iCat):
+                OrphanICat.append(iCat)
+        self.printOrphanCatEnt(OrphanICat)
+        
+        self.close(nbTN1, nbTN2)

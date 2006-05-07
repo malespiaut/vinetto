@@ -2,7 +2,7 @@ from distutils.core import setup
 setup (name='vinetto',
     version='0.06alpha',
     scripts=['vinetto'],
-    py_modules=['vinreport'],
+    py_modules=['vinutils', 'vinreport'],
     data_files=[('/usr/share/vinetto', ['res/header', 'res/huffman', \
                                         'res/quantization', \
 					'res/HtRepTemplate.html'])],
