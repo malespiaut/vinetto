@@ -6,7 +6,7 @@
 
 
 
-Version alpha 0.05 (25 apr 2006)
+Version alpha 0.06 (7 may 2006)
 ------------------
 
 Introduction
@@ -104,5 +104,5 @@ options:
 	Metadata list will be written on standard output.
 
 --------------
-25 apr 2006
+7 may 2006
 Michel Roukine

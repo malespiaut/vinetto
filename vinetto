@@ -32,25 +32,19 @@ __author__ = 'Michel Roukine'
 import sys
 import os
 import StringIO
+import md5
 import vinreport
 
 from optparse import OptionParser
 from struct  import unpack
 from binascii import unhexlify
 from time    import ctime
-
+from vinutils import addCatEntry, nbCatEnt, nbTNstr, TNfname, catIndxOutOfSeq, \
+                     tnStreamOutOfSeq
 
 PPS_TYPES = ["undefined", "storage", "stream", "undefined", "undefined", "root"]
 EOI = unhexlify('ffd9')
 HEADER1 = unhexlify('0c00')
-
-Typ1Extracted = 0
-Typ2Extracted = 0
-lastWritten = "0000"
-precNum = 0
-nbCatEnt = 0
-catIndxOutOfSeq = False
-tnStreamOutOfSeq = False
 
 
 def getargs():
@@ -145,11 +139,15 @@ except ImportError, e:
 
 thumbsDB = open(tDBfname,"rb").read()
 longueur = len(thumbsDB)
+md5tDB = md5.new(thumbsDB).hexdigest()
+
+if htmlrep == True:
+    report.SetFileSection(longueur, md5tDB)
 
 if (longueur % 512 ) != 0:
-    print >> sys.stderr, " *** Error : length " + tDBfname + " : " \
+    print >> sys.stderr, " ** Warning: length " + tDBfname + " : " \
                         + str(longueur) + ", non multiple 512"
-    sys.exit(7)
+
 
 # -----------------------------------------------------------------------------
 # Analyzing header block ...
@@ -192,11 +190,11 @@ while i != -2:
 SID = 0
 
 while currentBlock != -2:
-    offset = 0x200 + currentBlock*0x200
+    offset = 0x200 + currentBlock * 0x200
     for i in range (offset, offset+0x200, 0x80):
         pps_rawname     = unpack("64s", thumbsDB[i     :i+0x40])[0]
         pps_sizeofname  = unpack("<h",  thumbsDB[i+0x40:i+0x42])[0]
-        pps_type        = unpack("b",  thumbsDB[i+0x42:i+0x43])[0]
+        pps_type        = unpack("b",   thumbsDB[i+0x42:i+0x43])[0]
         pps_ts1         = unpack("<Q",  thumbsDB[i+0x64:i+0x6c])[0]
         pps_ts2         = unpack("<Q",  thumbsDB[i+0x6c:i+0x74])[0]
         pps_sb          = unpack("<l",  thumbsDB[i+0x74:i+0x78])[0]
@@ -247,7 +245,7 @@ while currentBlock != -2:
                                                         MiniFATblocks, 
                                                         currentStreamMiniBlock)
 
-            # extracted stream processing ... ---------------------------------
+            # extraction stream processing ... ---------------------------------
 
             longueur = len(sr)
 
@@ -259,15 +257,6 @@ while currentBlock != -2:
                 recordLen = unpack("<h", sr[0:2])[0]
                 indcat = recordLen
                 SID = SID - 1
-
-                print
-                print " Root Entry modify timestamp :", \
-                      ctime(conv2pytime(REtimestamp))
-                if htmlrep == True:
-                        report.headwrite (ctime(conv2pytime(REtimestamp)))
-                print
-                print " ------------------------------------------------------"
-                print
                 
                 # -------------------------------------------------------------
                 # Analyzing Catalog entries ...
@@ -280,16 +269,11 @@ while currentBlock != -2:
 
                     originame   = sr[indcat+16 :indcat+16+nameLen]
                     TNid = "%04i" % num
-                    if precNum != (num - 1):
-                        catIndxOutOfSeq = True
-                    precNum = num
                     TNtimestamp = ctime(conv2pytime(timestamp))
                     TNname = unicode(originame,
                                    'utf-16-le').encode('iso-8859-1', 'replace')
                     print  " " + TNid, " ", TNtimestamp, " ", TNname
-                    nbCatEnt += 1
-                    if htmlrep == True:
-                        report.addTN (TNid, TNtimestamp, TNname)
+                    addCatEntry(num, TNtimestamp, TNname)
                     indcat = indcat + recordLen
        
             else :
@@ -313,11 +297,8 @@ while currentBlock != -2:
                 # is it a type 2 thumbnail ? (full jpeg)
                 if  sr[0x0c:0x10] == "\xff\xd8\xff\xe0" :
                     if outputdir != None :
-                        open(outputdir + SIDstr + ".jpg","wb").write(sr[0x0c:])
-                        if int(lastWritten) != int(SIDstr) - 1 : 
-                            tnStreamOutOfSeq = true
-                        lastWritten = SIDstr
-                        Typ2Extracted += 1
+                        open(outputdir + TNfname(SIDstr, "2") + ".jpg", \
+                             "wb").write(sr[0x0c:])                                   
                 elif  unpack("<L",sr[0x0c:0x10])[0] == 1 :
                     # is second header OK ?
                     if  unpack("<H", sr[0x0c+4:0x0c+6])[0] != (longueur - 
@@ -326,9 +307,7 @@ while currentBlock != -2:
                               " *** Err : length(2) error in stream", SID
                         sys.exit(5)
                     # Type 1 TN processing ...
-                    
-                    if (PIL == "imported") and (outputdir != None):
-                                        
+                    if (PIL == "imported") and (outputdir != None):                                
                         type1sr = header[:0x14]
                         type1sr = type1sr + quantization
                         type1sr = type1sr + sr[0x1e:0x34]
@@ -339,12 +318,8 @@ while currentBlock != -2:
                         r, g, b, a = im.split()
                         im = Image.merge("RGB", (b, g, r))
                         im = im.transpose(Image.FLIP_TOP_BOTTOM)
-                        im.save(outputdir + SIDstr + ".jpg")
-                        if int(lastWritten) != int(SIDstr) - 1 : 
-                            tnStreamOutOfSeq = True
-                        lastWritten = SIDstr
-                        Typ1Extracted += 1
-                    
+                        im.save(outputdir + TNfname(SIDstr, "1") + ".jpg", \
+                                "JPEG", quality=100)  
                 else :
                     print >> sys.stderr, \
                           " *** Err : header (2) error in stream", SID
@@ -354,6 +329,15 @@ while currentBlock != -2:
 
         elif pps_type == 5: # Root Entry
             REtimestamp = pps_ts2
+            print
+            print " Root Entry modify timestamp :", \
+                  ctime(conv2pytime(REtimestamp))
+            if htmlrep == True:
+                report.headwrite (ctime(conv2pytime(REtimestamp)))
+            print
+            print " ------------------------------------------------------"
+            print
+            
         SID = SID + 1
 
     currentBlock = nextBlock(thumbsDB, FATblocks, currentBlock)
@@ -362,25 +346,28 @@ print
 print " ------------------------------------------------------"
 print
 
-if catIndxOutOfSeq == True:
-    print >> sys.stderr, " ** Warning: ", tDBfname, "Catalog",\
-                         " index number out of sequence"
+if catIndxOutOfSeq() == True:
+    print >> sys.stderr, " * Info: ", tDBfname, "Catalog",\
+                         " index number out of usual sequence"
 
-if tnStreamOutOfSeq == True:
-    print >> sys.stderr, " ** Warning: ", tDBfname, \
-                         "thumbnail stream index number out of sequence"
+if tnStreamOutOfSeq() == True:
+    print >> sys.stderr, " * Info: ", tDBfname, \
+                         "thumbnail stream index number out of usual sequence"
 
-if (Typ1Extracted + Typ2Extracted) > 0:
-    if Typ1Extracted > 0:
-        print "    ", Typ1Extracted, "Type 1 thumbnails extracted to", outputdir
-    if Typ2Extracted > 0:
-        print "    ", Typ2Extracted, "Type 2 thumbnails extracted to", outputdir
-    print
-    
-if  (outputdir != None) and ((Typ1Extracted + Typ2Extracted) != nbCatEnt):
+if  (outputdir != None) and (nbCatEnt() != nbTNstr()):
     print >> sys.stderr, " ** Warning: ", tDBfname, " -- number of extracted ", \
                          "thumbnails does not match number of Catalog entries"
-    
+
+if (nbTNstr()) > 0:
+    for vType in ["1", "2"]:
+        if nbTNstr(vType) > 0:
+            print "    ", nbTNstr(vType), "Type", vType, \
+                  "thumbnails extracted to", outputdir
+    print
+elif outputdir != None:
+    print "     0 thumbnails extracted to", outputdir                 
+    print
+
 if htmlrep == True:
-    report.close(Typ1Extracted, Typ2Extracted)
+    report.flush(nbTNstr("1"), nbTNstr("2"))
     
