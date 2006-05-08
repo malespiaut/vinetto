@@ -105,21 +105,11 @@ class HtRep(Report):
             self.repfile.write(ligne)
 
 
-    def close(self, Typ1Extracted, Typ2Extracted):
+    def close(self, statstring):
         """ Terminate processing HtRep instance.  """
-        typextract = ""
-        if (Typ1Extracted + Typ2Extracted) == 0:
-            typextract = "0 thumbnail(s) extracted to " + self.outputdir
-        else:
-            if Typ1Extracted > 0:
-                typextract = str(Typ1Extracted) + \
-                " Type 1 thumbnails extracted to " + self.outputdir
-            if Typ2Extracted > 0:
-                typextract += "<BR>" + str(Typ2Extracted) + \
-                " Type 2 thumbnails extracted to " + self.outputdir
             
         for ligne in HtFooter:
-            ligne = ligne.replace("__TYPEXTRACT__", typextract)
+            ligne = ligne.replace("__TYPEXTRACT__", statstring)
             ligne = ligne.replace("__VVERSION__", "Vinetto " + self.verstr)
             self.repfile.write(ligne)
         self.repfile.close()
@@ -191,7 +181,7 @@ class HtRep(Report):
                     endOrphanSection = True
         
             
-    def flush(self, nbTN1, nbTN2):
+    def flush(self, statstring):
         """ Process the report body and the report end.  """
         from vinutils import TNStreams
         from vinutils import Catalog
@@ -232,4 +222,4 @@ class HtRep(Report):
                 OrphanICat.append(iCat)
         self.printOrphanCatEnt(OrphanICat)
         
-        self.close(nbTN1, nbTN2)
+        self.close(statstring)

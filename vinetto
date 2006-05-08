@@ -40,11 +40,12 @@ from struct  import unpack
 from binascii import unhexlify
 from time    import ctime
 from vinutils import addCatEntry, nbCatEnt, nbTNstr, TNfname, catIndxOutOfSeq, \
-                     tnStreamOutOfSeq, addTNStream
+                     tnStreamOutOfSeq, addTNStream, extractStats
 
 PPS_TYPES = ["undefined", "storage", "stream", "undefined", "undefined", "root"]
 EOI = unhexlify('ffd9')
 HEADER1 = unhexlify('0c00')
+PIL = ""
 
 
 def getargs():
@@ -133,8 +134,7 @@ if outputdir != None :
         print >> sys.stderr, ""
         print >> sys.stderr, " ** Warning: Cannot find \"Image\" module."
         print >> sys.stderr, "             Vinetto will only extract Type 2 thumbnails."
-        print >> sys.stderr, ""
-        PIL = ""    
+        print >> sys.stderr, ""   
  
     header       = open("/usr/share/vinetto/header","rb").read()
     quantization = open("/usr/share/vinetto/quantization","rb").read()
@@ -357,16 +357,9 @@ if  (outputdir != None) and (nbCatEnt() != nbTNstr()):
     print >> sys.stderr, " ** Warning: ", tDBfname, " -- number of extracted ", \
                          "thumbnails does not match number of Catalog entries"
 
-if (nbTNstr()) > 0:
-    for vType in ["1", "2"]:
-        if nbTNstr(vType) > 0:
-            print "    ", nbTNstr(vType), "Type", vType, \
-                  "thumbnails extracted to", outputdir
-    print
-elif outputdir != None:
-    print "     0 thumbnails extracted to", outputdir                 
-    print
+statstring = extractStats(outputdir)
+print statstring
 
 if htmlrep == True:
-    report.flush(nbTNstr("1"), nbTNstr("2"))
+    report.flush(statstring)
     

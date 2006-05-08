@@ -89,7 +89,7 @@ def nbCatEnt ():
 
 
 def nbTNstr (*vt):
-    """Return number of extracted thumbnails.  """ 
+    """Return number of extracted/unextracted thumbnails.  """ 
     nb = 0
     if len(vt) == 0:
         for k in TNStreams:
@@ -102,6 +102,34 @@ def nbTNstr (*vt):
                 if vt[0] == vType :
                     nb += 1
         return nb
+
+
+def extractStats(outputdir):
+    """Return extraction statistics.  """
+    extr = {"1":0, "2":0}
+    unextr = {"1":0, "2":0}
+    statstring = ""
+    odstr = ""
+    if outputdir != None:
+        odstr = " to " + outputdir
+    
+    for k in TNStreams:
+        for (vType, filename) in TNStreams[k]:
+            if filename == "" :
+                unextr[vType] += 1
+            else:
+                extr[vType] += 1
+    
+    for vt in extr:
+        if extr[vt] > 0:
+            statstring += str(extr[vt]) + " Type " + vt + \
+                          " thumbnails extracted" + odstr + "\n"
+    
+    for vt in unextr:
+        if unextr[vt] > 0:
+            statstring += str(unextr[vt]) + " Type " + vt + \
+                          " thumbnails unextracted" + odstr + "\n"
+    return statstring
 
 
 def getCatEntry(iCat):
