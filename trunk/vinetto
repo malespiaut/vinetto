@@ -40,7 +40,7 @@ from struct  import unpack
 from binascii import unhexlify
 from time    import ctime
 from vinutils import addCatEntry, nbCatEnt, nbTNstr, TNfname, catIndxOutOfSeq, \
-                     tnStreamOutOfSeq
+                     tnStreamOutOfSeq, addTNStream
 
 PPS_TYPES = ["undefined", "storage", "stream", "undefined", "undefined", "root"]
 EOI = unhexlify('ffd9')
@@ -88,11 +88,10 @@ def nextBlock (TDB, Table, indx):
     offst = Table [iFAT] * 512 + 0x200 + iSECT*4
     return unpack("<l", TDB[offst:offst+4])[0]
 
-    
+# Beginning ...   
 tDBfname, outputdir, htmlrep = getargs()
 
 # Testing file and DIR parameters
-
 if not os.access(tDBfname, os.F_OK):
     print >> sys.stderr, "Error: ", tDBfname, "does not exist"
     sys.exit(1)
@@ -102,7 +101,15 @@ elif  not os.path.isfile(tDBfname):
 elif  not os.access(tDBfname, os.R_OK):
     print >> sys.stderr, "Error: ", tDBfname, "not readable"
     sys.exit(1)
-        
+
+# Opening Thumbs.db file
+thumbsDB = open(tDBfname,"rb").read()
+longueur = len(thumbsDB)
+if (longueur % 512 ) != 0:
+    print >> sys.stderr, " ** Warning: length " + tDBfname + " : " \
+                        + str(longueur) + ", non multiple 512"
+
+# Initializing extraction and optional html report
 if outputdir != None :
     if not os.path.exists(outputdir):
         try :
@@ -118,36 +125,26 @@ if outputdir != None :
         print >> sys.stderr, 'Error: ', outputdir, ' not writable'
         sys.exit(1)
     outputdir += "/"
+    
+    try:
+        import Image
+        PIL = "imported"
+    except ImportError, e:
+        print >> sys.stderr, ""
+        print >> sys.stderr, " ** Warning: Cannot find \"Image\" module."
+        print >> sys.stderr, "             Vinetto will only extract Type 2 thumbnails."
+        print >> sys.stderr, ""
+        PIL = ""    
+ 
+    header       = open("/usr/share/vinetto/header","rb").read()
+    quantization = open("/usr/share/vinetto/quantization","rb").read()
+    huffman      = open("/usr/share/vinetto/huffman","rb").read()
  
     if htmlrep == True:
         report = vinreport.HtRep(tDBfname, outputdir, __version__ + " (r" + \
                                  __revision__[11:-2] +")")
-
-#---
-try:
-    import Image
-    PIL = "imported"
-    header       = open("/usr/share/vinetto/header","rb").read()
-    quantization = open("/usr/share/vinetto/quantization","rb").read()
-    huffman      = open("/usr/share/vinetto/huffman","rb").read()
-except ImportError, e:
-    print >> sys.stderr, ""
-    print >> sys.stderr, "Warning: Cannot find \"Image\" module."
-    print >> sys.stderr, "         Vinetto will only extract Type 2 thumbnails."
-    print >> sys.stderr, ""
-    PIL = ""
-
-thumbsDB = open(tDBfname,"rb").read()
-longueur = len(thumbsDB)
-md5tDB = md5.new(thumbsDB).hexdigest()
-
-if htmlrep == True:
-    report.SetFileSection(longueur, md5tDB)
-
-if (longueur % 512 ) != 0:
-    print >> sys.stderr, " ** Warning: length " + tDBfname + " : " \
-                        + str(longueur) + ", non multiple 512"
-
+        md5tDB = md5.new(thumbsDB).hexdigest()
+        report.SetFileSection(longueur, md5tDB)
 
 # -----------------------------------------------------------------------------
 # Analyzing header block ...
@@ -319,7 +316,9 @@ while currentBlock != -2:
                         im = Image.merge("RGB", (b, g, r))
                         im = im.transpose(Image.FLIP_TOP_BOTTOM)
                         im.save(outputdir + TNfname(SIDstr, "1") + ".jpg", \
-                                "JPEG", quality=100)  
+                                "JPEG", quality=100)
+                    elif outputdir != None: # Cannot extract : PIL not imported
+                        addTNStream(int(SIDstr), "1", "")
                 else :
                     print >> sys.stderr, \
                           " *** Err : header (2) error in stream", SID
@@ -333,7 +332,7 @@ while currentBlock != -2:
             print " Root Entry modify timestamp :", \
                   ctime(conv2pytime(REtimestamp))
             if htmlrep == True:
-                report.headwrite (ctime(conv2pytime(REtimestamp)))
+                report.SetREtst (ctime(conv2pytime(REtimestamp)))
             print
             print " ------------------------------------------------------"
             print

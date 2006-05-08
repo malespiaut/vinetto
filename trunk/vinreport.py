@@ -77,8 +77,6 @@ class HtRep(Report):
         self.TNidList = []
         self.TNtsList = []
         self.TNnameList = []
-        
-        self.repfile = open(outputdir + "index.html", "w")
     
     
     def SetFileSection (self, FileSize, md5):
@@ -87,9 +85,14 @@ class HtRep(Report):
         self.md5 = md5
         
         
-    def headwrite (self, REtst):
-        """ Writes report header.  """
+    def SetREtst (self, REtst):
+        """ Initialize data of the report file section.  """
+        self.REtst = REtst
+       
         
+    def headwrite (self):
+        """ Writes report header.  """
+        self.repfile = open(self.outputdir + "index.html", "w")    
         for ligne in HtHeader:
             ligne = ligne.replace("__DATEREPORT__", "Report date : " + ctime(time()))
             ligne = ligne.replace("__TDBDIRNAME__", self.tDBdirname)
@@ -98,7 +101,7 @@ class HtRep(Report):
             ligne = ligne.replace("__FILESIZE__", str(self.FileSize))
             ligne = ligne.replace("__MD5__", self.md5)
             ligne = ligne.replace("__ROOTENTRYTST__", \
-                                  "Root Entry modify timestamp : " + REtst)
+                                  "Root Entry modify timestamp : " + self.REtst)
             self.repfile.write(ligne)
 
 
@@ -192,6 +195,8 @@ class HtRep(Report):
         """ Process the report body and the report end.  """
         from vinutils import TNStreams
         from vinutils import Catalog
+
+        self.headwrite()
 
         self.rownumber = 0
         self.tnId    = []
