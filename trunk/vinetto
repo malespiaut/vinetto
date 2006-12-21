@@ -54,12 +54,15 @@ def getargs():
              "Copyright (C) 2005-2006 Michel Roukine.\n" + \
              "Vinetto is open source software," + \
              " see http://vinetto.sourceforge.net/"
-    parser = OptionParser(usage="%prog [OPTIONS] [-o DIR] file", version=verstr)
+    parser = OptionParser(usage="%prog [OPTIONS] [-U] [-o DIR] file", version=verstr)
     parser.add_option("-o", dest="outputdir",
                       help="write thumbnails to DIR", metavar="DIR")
     parser.set_defaults(htmlrep=False)
     parser.add_option("-H", action="store_true", dest="htmlrep",
                       help="write html report to DIR")
+    parser.set_defaults(encoding=False)
+    parser.add_option("-U", action="store_true", dest="encoding",
+                      help="use utf8 encodings")
     opts, pargs = parser.parse_args()
     
     if len(pargs) != 1:
@@ -68,8 +71,22 @@ def getargs():
     if (opts.outputdir == None) and (opts.htmlrep == True):
         parser.error("-H option requires -o with a directory name")
     
-    return (pargs[0], opts.outputdir, opts.htmlrep) 
+    return (pargs[0], opts.outputdir, opts.htmlrep, opts.encoding) 
 
+
+def getencodings():
+    """What encoding we use?"""
+    if utf8encoding: 
+        fileencoding = 'utf8'
+    else:
+        fileencoding = 'iso-8859-1'
+    return fileencoding
+
+def encodefilename(originame):
+    """Convert filename to the global encoding. """
+    TNname = unicode(originame,
+                   'utf-16-le').encode(getencodings(), 'replace')
+    return TNname
 
 def conv2pytime (win32filetime):
     """Convert win32 timestamp to python time.  """
@@ -90,7 +107,7 @@ def nextBlock (TDB, Table, indx):
     return unpack("<l", TDB[offst:offst+4])[0]
 
 # Beginning ...   
-tDBfname, outputdir, htmlrep = getargs()
+tDBfname, outputdir, htmlrep, utf8encoding = getargs()
 
 # Testing file and DIR parameters
 if not os.access(tDBfname, os.F_OK):
@@ -141,7 +158,7 @@ if outputdir != None :
     huffman      = open("/usr/share/vinetto/huffman","rb").read()
  
     if htmlrep == True:
-        report = vinreport.HtRep(tDBfname, outputdir, __version__ + " (r" + \
+        report = vinreport.HtRep(tDBfname, outputdir, getencodings(), __version__ + " (r" + \
                                  __revision__[11:-2] +")")
         md5tDB = md5.new(thumbsDB).hexdigest()
         report.SetFileSection(longueur, md5tDB)
@@ -267,8 +284,7 @@ while currentBlock != -2:
                     originame   = sr[indcat+16 :indcat+16+nameLen]
                     TNid = "%04i" % num
                     TNtimestamp = ctime(conv2pytime(timestamp))
-                    TNname = unicode(originame,
-                                   'utf-16-le').encode('iso-8859-1', 'replace')
+                    TNname = encodefilename(originame)
                     print  " " + TNid, " ", TNtimestamp, " ", TNname
                     addCatEntry(num, TNtimestamp, TNname)
                     indcat = indcat + recordLen
