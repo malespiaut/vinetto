@@ -53,7 +53,7 @@ class Report:
 
 class HtRep(Report):
     """ Html vinetto elementary mode report Class.  """
-    def __init__ (self, tDBfname, outputdir, verstr):
+    def __init__ (self, tDBfname, outputdir, charset, verstr):
         """ Initialize a new HtRep instance.  """
         Report.__init__(self, tDBfname, outputdir, verstr)
         self.rownumber = 0
@@ -61,6 +61,8 @@ class HtRep(Report):
         
         for ligne in open("/usr/share/vinetto/HtRepTemplate.html",
                           "r").readlines():
+            if ligne.find("__CHARSET__") > 0:
+                ligne = ligne.replace("__CHARSET__", charset)
             if ligne.find("__ITS__") >= 0:
                 separatorID += 1
                 continue
