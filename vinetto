@@ -46,6 +46,7 @@ PPS_TYPES = ["undefined", "storage", "stream", "undefined", "undefined", "root"]
 EOI = unhexlify('ffd9')
 HEADER1 = unhexlify('0c00')
 PIL = ""
+NUMBERED_THUMBS_DIR = ".thumbs"
 
 
 def getargs():
@@ -54,7 +55,7 @@ def getargs():
              "Copyright (C) 2005-2006 Michel Roukine.\n" + \
              "Vinetto is open source software," + \
              " see http://vinetto.sourceforge.net/"
-    parser = OptionParser(usage="%prog [OPTIONS] [-U] [-o DIR] file", version=verstr)
+    parser = OptionParser(usage="%prog [OPTIONS] [-s] [-U] [-o DIR] file", version=verstr)
     parser.add_option("-o", dest="outputdir",
                       help="write thumbnails to DIR", metavar="DIR")
     parser.set_defaults(htmlrep=False)
@@ -63,6 +64,9 @@ def getargs():
     parser.set_defaults(encoding=False)
     parser.add_option("-U", action="store_true", dest="encoding",
                       help="use utf8 encodings")
+    parser.set_defaults(symlinks=False)
+    parser.add_option("-s", action="store_true", dest="symlinks",
+                      help="create symlink of the image realname to the numbered name in DIR/.thumbs")
     opts, pargs = parser.parse_args()
     
     if len(pargs) != 1:
@@ -70,8 +74,8 @@ def getargs():
         
     if (opts.outputdir == None) and (opts.htmlrep == True):
         parser.error("-H option requires -o with a directory name")
-    
-    return (pargs[0], opts.outputdir, opts.htmlrep, opts.encoding) 
+    os.system("mkdir " + opts.outputdir + "/" + NUMBERED_THUMBS_DIR)
+    return (pargs[0], opts.outputdir, opts.htmlrep, opts.encoding, opts.symlinks) 
 
 
 def getencodings():
@@ -107,7 +111,7 @@ def nextBlock (TDB, Table, indx):
     return unpack("<l", TDB[offst:offst+4])[0]
 
 # Beginning ...   
-tDBfname, outputdir, htmlrep, utf8encoding = getargs()
+tDBfname, outputdir, htmlrep, utf8encoding, symlinks = getargs()
 
 # Testing file and DIR parameters
 if not os.access(tDBfname, os.F_OK):
@@ -285,6 +289,9 @@ while currentBlock != -2:
                     TNid = "%04i" % num
                     TNtimestamp = ctime(conv2pytime(timestamp))
                     TNname = encodefilename(originame)
+                    if symlinks:
+                        os.system( "ln -fs " + NUMBERED_THUMBS_DIR + "/" + TNid + ".jpg " + "\"" + \
+                                    outputdir + "/" + TNname + "\"" )
                     print  " " + TNid, " ", TNtimestamp, " ", TNname
                     addCatEntry(num, TNtimestamp, TNname)
                     indcat = indcat + recordLen
@@ -310,7 +317,7 @@ while currentBlock != -2:
                 # is it a type 2 thumbnail ? (full jpeg)
                 if  sr[0x0c:0x10] == "\xff\xd8\xff\xe0" :
                     if outputdir != None :
-                        open(outputdir + TNfname(SIDstr, "2") + ".jpg", \
+                        open(outputdir + "/" + NUMBERED_THUMBS_DIR + "/" + TNfname(SIDstr, "2") + ".jpg", \
                              "wb").write(sr[0x0c:])                                   
                 elif  unpack("<L",sr[0x0c:0x10])[0] == 1 :
                     # is second header OK ?
