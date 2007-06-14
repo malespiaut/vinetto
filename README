@@ -6,7 +6,7 @@
 
 
 
-Version alpha 0.06 (7 may 2006)
+Version beta 0.07 (June 14 2007)
 ------------------
 
 Introduction
@@ -93,16 +93,20 @@ thumbnails. ***
 Usage
 -----
 
-Usage: vinetto [OPTIONS] [-o DIR] file
+usage: vinetto [OPTIONS] [-s] [-U] [-o DIR] file
 
 options:
   --version   show program's version number and exit
   -h, --help  show this help message and exit
   -o DIR      write thumbnails to DIR
   -H          write html report to DIR
+  -U          use utf8 encodings
+  -s          create symlink of the image realname to the numbered name in
+              DIR/.thumbs
+
 
 	Metadata list will be written on standard output.
 
 --------------
-7 may 2006
+June 14 2007
 Michel Roukine
